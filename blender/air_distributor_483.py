@@ -38,6 +38,11 @@ def m(v):
     return v * 0.001
 
 
+def secs(lst):
+    """Loft sections given in mm -> metres."""
+    return [tuple(m(v) for v in sec) for sec in lst]
+
+
 def rr(k, w, h, r, depth, at, axis, bevel):
     """Rounded rectangular plate (w x h in the plate's own plane, see Kit.prism)."""
     k.prism([(m(a), m(b)) for a, b in outline(sd_rrect(0, 0, w, h, r), (-w / 2 - 6, -h / 2 - 6, w / 2 + 6, h / 2 + 6), 2)],
@@ -118,7 +123,7 @@ def line_part(col):
     x0 = -HX - 8
     k.mat("body", 0x4f7f9c, rough=0.6, metal=0.3)
     rr(k, 160, 220, 18, 16, (x0 - 8, YP, ZP), "x", 3)                                       # tall flange of body 28
-    k.loft([(0, 132, 150, 34), (-28, 112, 122, 40), (-58, 136, 162, 44)],
+    k.loft(secs([(0, 132, 150, 34), (-28, 112, 122, 40), (-58, 136, 162, 44)]),
            at=(m(x0 - 16), m(YP), m(ZP)), axis="x", bevel=m(3))                               # body 28 (waisted)
     for dz in (-38, 38):                                                                      # cast ribs on the body
         k.box((m(54), m(150), m(10)), at=(m(x0 - 45), m(YP), m(ZP + dz)), bevel=m(3))
@@ -126,10 +131,10 @@ def line_part(col):
     k.cyl(m(24), m(44), at=(m(x0 - 30), m(YP - 92), m(ZP)), axis="y", seg=28, bevel=m(3))   # atmospheric boss, bottom
     k.cyl(m(105), m(26), at=(m(x0 - 88), m(YP), m(ZP)), axis="x", seg=72, bevel=m(5))       # diaphragm flange
     k.mat("cover", 0x5a8aa8, rough=0.55, metal=0.3)
-    k.loft([(0, 150, 168, 44), (-16, 122, 136, 36), (-80, 86, 96, 28), (-134, 60, 64, 22)],
+    k.loft(secs([(0, 150, 168, 44), (-16, 122, 136, 36), (-80, 86, 96, 28), (-134, 60, 64, 22)]),
            at=(m(x0 - 101), m(YP), m(ZP)), axis="x", bevel=m(3))                              # tapering cover 25
-    k.loft([(0, 16, 190, 7), (-120, 10, 90, 4)], at=(m(x0 - 103), m(YP), m(ZP)), axis="x", bevel=m(1))   # ribs top/bottom
-    k.loft([(0, 190, 16, 7), (-120, 90, 10, 4)], at=(m(x0 - 103), m(YP), m(ZP)), axis="x", bevel=m(1))   # ribs at the sides
+    k.loft(secs([(0, 16, 190, 7), (-120, 10, 90, 4)]), at=(m(x0 - 103), m(YP), m(ZP)), axis="x", bevel=m(1))   # ribs top/bottom
+    k.loft(secs([(0, 190, 16, 7), (-120, 90, 10, 4)]), at=(m(x0 - 103), m(YP), m(ZP)), axis="x", bevel=m(1))   # ribs at the sides
     k.cyl(m(30), m(40), at=(m(x0 - 255), m(YP), m(ZP)), axis="x", seg=40, bevel=m(4))       # switch boss
     k.mat("steel", 0x9aa3aa, rough=0.35, metal=0.75)
     for sy in (1, -1):                                                                        # flange bolts at the corners
