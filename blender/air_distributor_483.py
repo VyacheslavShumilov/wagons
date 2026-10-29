@@ -1,134 +1,134 @@
-"""Air distributor (воздухораспределитель) No. 483 of a freight car, three parts.
+"""Air distributor (воздухораспределитель) No. 483-000 of a freight car, three parts.
 
 Site use: BRAKE_RIG in index.html, parts "vr_chamber", "vr_main", "vr_line" (not wired in yet).
 
-Construction (Руководство ПКБ ЦВ № 922-2021, п. 2.1; Асадченко, «Автоматические тормоза»):
-- two-chamber reservoir 295.001: working chamber 6.0 L, spool chamber 4.5 L; bolted to the
-  bracket on the car frame with four M20 bolts; carries the load-mode switch (порожний /
-  средний / гружёный) and the pipe connections to the brake pipe, the auxiliary reservoir
-  and the brake cylinder;
-- main part 270.023 on one flange of the reservoir: body and cover, release valve with its
-  pull lever (поводок) for manual release;
-- line part 483.010 on the opposite, identical flange: body and diaphragm cover with the
-  release-mode handle «Р/Г» (равнинный / горный).
-Overall sizes are not given in these sources; they are estimated (≈540 x 300 x 300 mm).
+Construction (Руководство ПКБ ЦВ № 922-2021, п. 2.1; РГУПС, ЛР № 7 «ВР 483: устройство»;
+Асадченко, «Автоматические тормоза»), shape after the manufacturer's renders:
+- two-chamber reservoir 295.001 (РК 6.0 L, ЗК 4.5 L): a tall cast box under a wide top plate
+  that bolts to the frame bracket with four vertical M20 bolts in cast bosses; the brake pipe,
+  auxiliary reservoir and brake cylinder are connected by three unions on its front face;
+  the load-mode switch shaft comes out of the front face (handle removed on cars with
+  an autoregime); round flange for the main part on one side, square flange for the line part
+  on the other;
+- main part 270.023: mating flange, waisted body 37 with a plugged boss on top, cover 1 on four
+  bolts with the release valve cap at the bottom and its brass pusher (поводок) pointing down;
+- line part 483.010: square flange, body 28 with a plugged boss, big round flange to the conical
+  cover 25 that ends in the boss of the «Р/Г» release-mode switch with crank handle 22.
+Overall sizes are not given in the sources; proportions follow the renders (reservoir ≈ 400 mm high).
 
 Origin = centre of the reservoir. Local axes as on the site: x along the car, the line part
-towards -x and the main part towards +x (as the primitives in BRAKE_RIG), y up, z across.
+towards -x and the main part towards +x, y up, z across (pipe unions on the +z face).
 """
 import math
-from mathutils import Matrix
 try:
-    from wagonkit import Kit, site_collection, sd_circle, sd_rrect, sd_union, outline
+    from wagonkit import Kit, site_collection, sd_rrect, outline
 except ImportError:          # pasted after wagonkit.py into a single script
     pass
 
-PART = "vr_chamber"
 OUT = "air_distributor_483.glb"
-MM = 0.001
+YP = 20          # height of the axis of the main and line parts
 
 
 def m(v):
-    return v * MM
+    return v * 0.001
 
 
-def bolt_ring(k, n, radius, x, r_head=8, depth=8, phase=0.0):
-    for i in range(n):
-        a = phase + 2 * math.pi * i / n
-        k.hexnut(m(r_head), m(depth), at=(m(x), m(radius) * math.sin(a), m(radius) * math.cos(a)), axis="x")
+def plate(k, w, h, r, depth, at, axis, bevel):
+    """Rounded rectangular plate (w x h in the plate's own plane)."""
+    k.prism([(m(a), m(b)) for a, b in outline(sd_rrect(0, 0, w, h, r), (-w / 2 - 6, -h / 2 - 6, w / 2 + 6, h / 2 + 6), 2)],
+            m(depth), at=tuple(m(v) for v in at), axis=axis, bevel=m(bevel))
 
 
 def reservoir(col):
     k = Kit("vr_chamber", "ВР483_Резервуар_295.001")
-    k.mat("body", 0x3e6e8c, rough=0.6, metal=0.3)
-    # cast body: rounded block with a waist between the two chambers
-    side = sd_union([sd_rrect(0, 0, 300, 250, 46), sd_rrect(0, -40, 230, 230, 40)], k=24)
-    k.prism([(m(x), m(y)) for x, y in outline(side, (-170, -170, 170, 140), 2)], m(270), axis="z", bevel=m(8))
-    for z in (-70, 70):                                         # cast ribs on the top
-        k.box((m(250), m(16), m(14)), at=(0, m(128), m(z)), bevel=m(4))
-    # identical mating flanges for the main and line parts
-    for s in (1, -1):
-        k.cyl(m(100), m(18), at=(s * m(159), 0, 0), axis="x", seg=64, bevel=m(3))
-    # mounting pad on top: four lugs for the M20 bolts to the frame bracket
-    k.box((m(200), m(22), m(200)), at=(0, m(136), 0), bevel=m(5))
-    for sx in (1, -1):
+    k.mat("body", 0x3e6e8c, rough=0.65, metal=0.25)
+    # tall cast box: x 230 (along the car), z 230, y -200..+170
+    plate(k, 230, 370, 26, 230, (0, -15, 0), "z", 6)
+    plate(k, 250, 300, 20, 30, (0, 185, 0), "y", 6)              # top plate to the frame bracket (x 250, z 300)
+    for sx in (1, -1):                                            # vertical M20 bolt bosses, front and back
         for sz in (1, -1):
-            k.ring(m(24), m(11), m(22), at=(sx * m(110), m(136), sz * m(110)), axis="y", seg=28, bevel=m(2))
-            k.box((m(40), m(22), m(26)), at=(sx * m(92), m(136), sz * m(92)),
-                  rot=Matrix.Rotation(sx * sz * math.pi / 4, 4, "Y"), bevel=m(3))
-    # pipe bosses on the back: brake pipe (through the isolating cock), aux. reservoir, cylinder
-    for x, r in ((-80, 26), (0, 22), (80, 22)):
-        k.ring(m(r), m(r - 10), m(30), at=(m(x), m(-40), m(-150)), axis="z", seg=32, bevel=m(2))
-    # filter plug boss at the bottom
-    k.cyl(m(30), m(16), at=(m(-60), m(-160), 0), axis="y", seg=32, bevel=m(2))
-    # load-mode switch: boss and sector on the front face
-    k.cyl(m(34), m(14), at=(m(60), m(-30), m(141)), axis="z", seg=40, bevel=m(2))
-    k.box((m(120), m(70), m(6)), at=(m(60), m(10), m(137)), bevel=m(2))
+            k.ring(m(24), m(11), m(140), at=(sx * m(70), m(130), sz * m(126)), axis="y", seg=28, bevel=m(3))
+            k.box((m(30), m(140), m(16)), at=(sx * m(70), m(130), sz * m(114)), bevel=m(3))
+    k.cyl(m(100), m(10), at=(m(120), m(YP), 0), axis="x", seg=64, bevel=m(2))      # flange for the main part
+    plate(k, 190, 190, 24, 10, (-120, YP, 0), "x", 2)             # flange for the line part
+    for y in (140, -130):                                         # round cast pads (chamber plugs)
+        k.cyl(m(28), m(6), at=(m(118), m(y), 0), axis="x", seg=40, bevel=m(1.5))
+        k.cyl(m(28), m(6), at=(m(-118), m(y), 0), axis="x", seg=40, bevel=m(1.5))
+    k.cyl(m(18), m(14), at=(m(10), m(40), m(119)), axis="z", seg=24, bevel=m(2))   # load-mode switch boss
+    for x, y in ((-55, -60), (5, -80), (65, -100)):               # union bosses on the front face
+        k.cyl(m(26), m(10), at=(m(x), m(y), m(119)), axis="z", seg=32, bevel=m(2))
+
     k.mat("steel", 0x9aa3aa, rough=0.35, metal=0.75)
-    for sx in (1, -1):                                          # M20 bolts with crown nuts
+    for sx in (1, -1):                                            # M20 bolts with crown nuts
         for sz in (1, -1):
-            k.hexnut(m(16), m(13), at=(sx * m(110), m(153), sz * m(110)), axis="y")
-            k.cyl(m(10), m(70), at=(sx * m(110), m(150), sz * m(110)), axis="y", seg=16)
-            k.hexnut(m(16), m(16), at=(sx * m(110), m(117), sz * m(110)), axis="y")
-    k.hexnut(m(22), m(14), at=(m(-60), m(-175), 0), axis="y")   # filter plug
-    k.mat("handle", 0xd9a520, rough=0.45, metal=0.3)            # load-mode handle (yellow, as painted)
-    k.cyl(m(14), m(22), at=(m(60), m(-30), m(155)), axis="z", seg=20, bevel=m(1.5))
-    k.box((m(18), m(110), m(12)), at=(m(60), m(30), m(160)), bevel=m(3))
-    k.cyl(m(13), m(30), at=(m(60), m(88), m(160)), axis="z", seg=20, bevel=m(2))
-    k.mat("dark", 0x22282d, rough=0.6, metal=0.4)
-    for x, r in ((-80, 26), (0, 22), (80, 22)):                 # pipe thread bores
-        k.cyl(m(r - 10), m(4), at=(m(x), m(-40), m(-163)), axis="z", seg=24)
-    for i, x in enumerate((25, 60, 95)):                        # marks П / С / Г on the sector
-        k.box((m(4), m(14), m(2)), at=(m(x), m(36), m(141)))
+            k.hexnut(m(16), m(13), at=(sx * m(70), m(207), sz * m(126)), axis="y")
+            k.cyl(m(10), m(175), at=(sx * m(70), m(130), sz * m(126)), axis="y", seg=16)
+            k.hexnut(m(16), m(16), at=(sx * m(70), m(52), sz * m(126)), axis="y")
+    k.mat("dark", 0x1d2226, rough=0.55, metal=0.4)                 # unions, nipples, switch shaft
+    for x, y in ((-55, -60), (5, -80), (65, -100)):
+        k.hexnut(m(23), m(32), at=(m(x), m(y), m(140)), axis="z", bevel=m(2))
+        k.cyl(m(14), m(34), at=(m(x), m(y), m(172)), axis="z", seg=24, bevel=m(2))
+    k.cyl(m(8), m(32), at=(m(10), m(40), m(140)), axis="z", seg=16)
+    k.box((m(12), m(12), m(10)), at=(m(10), m(40), m(158)), bevel=m(1))
     return k.finish(col)
 
 
 def main_part(col):
     k = Kit("vr_main", "ВР483_Главная_часть_270.023")
-    k.mat("body", 0x4f7f9c, rough=0.55, metal=0.3)
-    k.cyl(m(100), m(18), at=(m(177), 0, 0), axis="x", seg=64, bevel=m(3))     # mating flange
-    k.cyl(m(84), m(80), at=(m(226), m(-6), 0), axis="x", seg=64, bevel=m(6))  # body 37
-    k.cyl(m(92), m(14), at=(m(272), m(-6), 0), axis="x", seg=64, bevel=m(3))  # body flange
-    k.box((m(80), m(60), m(70)), at=(m(222), m(-80), 0), bevel=m(10))         # release-valve housing
-    k.mat("cover", 0x5a8aa8, rough=0.5, metal=0.3)
-    k.cyl(m(90), m(16), at=(m(287), m(-6), 0), axis="x", seg=64, bevel=m(4))  # cover 1
-    k.cyl(m(60), m(16), at=(m(302), m(-6), 0), axis="x", r2=m(46), seg=48, bevel=m(3))
+    k.mat("body", 0x4f7f9c, rough=0.6, metal=0.3)
+    k.cyl(m(95), m(16), at=(m(133), m(YP), 0), axis="x", seg=64, bevel=m(3))       # mating flange
+    k.cyl(m(76), m(36), at=(m(159), m(YP), 0), axis="x", r2=m(60), seg=56, bevel=m(2))   # waisted body 37
+    k.cyl(m(60), m(26), at=(m(190), m(YP), 0), axis="x", r2=m(80), seg=56, bevel=m(2))
+    k.cyl(m(22), m(56), at=(m(176), m(YP + 76), 0), axis="y", seg=28, bevel=m(3))  # boss with plug
+    k.cyl(m(92), m(14), at=(m(210), m(YP), 0), axis="x", seg=64, bevel=m(3))       # body flange
+    k.mat("cover", 0x5a8aa8, rough=0.55, metal=0.3)
+    k.cyl(m(88), m(34), at=(m(234), m(YP), 0), axis="x", seg=64, bevel=m(9))       # cover 1
+    k.box((m(40), m(56), m(60)), at=(m(254), m(YP - 52), 0), bevel=m(8))           # release valve cap
+    k.cyl(m(26), m(54), at=(m(270), m(YP - 58), 0), axis="y", seg=32, bevel=m(4))
+    k.cyl(m(26), m(10), at=(m(270), m(YP - 26), 0), axis="y", r2=m(16), seg=32)
     k.mat("steel", 0x9aa3aa, rough=0.35, metal=0.75)
-    bolt_ring(k, 8, 88, 188, phase=math.pi / 8)
-    for i in range(8):                                          # cover bolts
-        a = math.pi / 8 + i * math.pi / 4
-        k.hexnut(m(7), m(7), at=(m(298), m(-6) + m(80) * math.sin(a), m(80) * math.cos(a)), axis="x")
-    k.cyl(m(8), m(40), at=(m(222), m(-128), 0), axis="y", seg=16)             # release valve pusher
-    k.ring(m(17), m(13), m(3.5), at=(m(222), m(-150), 0), axis="z", seg=24)   # ring for the pull chain
-    k.mat("lever", 0xb33a2d, rough=0.5, metal=0.2)              # pull lever (поводок), red
-    k.box((m(14), m(8), m(150)), at=(m(222), m(-158), m(70)), bevel=m(2))
+    for i in range(4):
+        a = math.pi / 4 + i * math.pi / 2
+        y, z = m(YP) + m(84) * math.sin(a), m(84) * math.cos(a)
+        k.hexnut(m(10), m(9), at=(m(146), y, z), axis="x")                          # flange nuts
+        k.hexnut(m(10), m(9), at=(m(221), y, z), axis="x")                          # cover nuts
+    k.mat("dark", 0x1d2226, rough=0.55, metal=0.4)
+    k.hexnut(m(19), m(14), at=(m(176), m(YP + 110), 0), axis="y")                  # plug
+    k.mat("brass", 0xc9b27a, rough=0.35, metal=0.8)
+    k.cyl(m(6), m(80), at=(m(270), m(YP - 125), 0), axis="y", seg=16)              # release valve pusher
+    k.ring(m(16), m(12), m(3.5), at=(m(270), m(YP - 172), 0), axis="z", seg=24)    # ring for the chain
     return k.finish(col)
 
 
 def line_part(col):
     k = Kit("vr_line", "ВР483_Магистральная_часть_483.010")
-    k.mat("body", 0x4f7f9c, rough=0.55, metal=0.3)
-    k.cyl(m(100), m(18), at=(m(-177), 0, 0), axis="x", seg=64, bevel=m(3))   # mating flange
-    k.cyl(m(90), m(50), at=(m(-210), 0, 0), axis="x", seg=64, bevel=m(5))    # body 28
-    k.cyl(m(118), m(16), at=(m(-243), 0, 0), axis="x", seg=72, bevel=m(4))   # diaphragm flange
-    k.mat("cover", 0x5a8aa8, rough=0.5, metal=0.3)
-    k.cyl(m(118), m(16), at=(m(-260), 0, 0), axis="x", seg=72, bevel=m(4))   # cover 25
-    k.cyl(m(96), m(24), at=(m(-280), 0, 0), axis="x", r2=m(70), seg=64, bevel=m(4))
-    k.cyl(m(40), m(24), at=(m(-302), 0, 0), axis="x", seg=40, bevel=m(3))    # mode-switch boss
-    k.cyl(m(18), m(16), at=(m(-232), m(-96), m(40)), axis="y", seg=20, bevel=m(1.5))   # atm. plug boss
+    k.mat("body", 0x4f7f9c, rough=0.6, metal=0.3)
+    plate(k, 186, 186, 24, 16, (-133, YP, 0), "x", 3)            # square flange of body 28
+    k.cyl(m(56), m(60), at=(m(-171), m(YP), 0), axis="x", seg=48, bevel=m(4))      # body
+    for y in (62, -62):                                           # cast air channels
+        k.cyl(m(16), m(62), at=(m(-171), m(YP + y), m(10)), axis="x", seg=24, bevel=m(3))
+    k.box((m(60), m(150), m(26)), at=(m(-171), m(YP), m(-30)), bevel=m(6))        # web
+    k.cyl(m(20), m(44), at=(m(-160), m(YP + 72), 0), axis="y", seg=28, bevel=m(3)) # boss with plug
+    k.cyl(m(118), m(30), at=(m(-216), m(YP), 0), axis="x", seg=72, bevel=m(5))     # diaphragm flange
+    k.mat("cover", 0x5a8aa8, rough=0.55, metal=0.3)
+    k.cyl(m(96), m(95), at=(m(-278), m(YP), 0), axis="x", r2=m(34), seg=64, bevel=m(3))  # conical cover 25
+    k.cyl(m(30), m(46), at=(m(-345), m(YP), 0), axis="x", seg=40, bevel=m(4))      # switch boss
     k.mat("steel", 0x9aa3aa, rough=0.35, metal=0.75)
-    bolt_ring(k, 8, 88, -188, phase=math.pi / 8)
-    for i in range(12):                                         # diaphragm cover bolts
-        a = math.pi / 12 + i * math.pi / 6
-        k.hexnut(m(7), m(7), at=(m(-272), m(108) * math.sin(a), m(108) * math.cos(a)), axis="x")
-        k.hexnut(m(7), m(7), at=(m(-231), m(108) * math.sin(a), m(108) * math.cos(a)), axis="x")
-    k.hexnut(m(11), m(10), at=(m(-232), m(-109), m(40)), axis="y")            # atmospheric plug
-    k.mat("handle", 0xd9a520, rough=0.45, metal=0.3)            # «Р/Г» handle 22
-    k.cyl(m(16), m(14), at=(m(-321), 0, 0), axis="x", seg=24, bevel=m(1.5))
-    k.box((m(14), m(16), m(120)), at=(m(-330), 0, m(36)), bevel=m(3))
-    k.mat("dark", 0x22282d, rough=0.6, metal=0.4)
-    for z in (-34, 34):                                         # marks Р and Г on the boss
-        k.box((m(2), m(10), m(12)), at=(m(-314.5), m(28), m(z)))
+    for sy in (1, -1):                                            # square flange bolts
+        for sz in (1, -1):
+            k.hexnut(m(10), m(9), at=(m(-145), m(YP) + sy * m(70), sz * m(70)), axis="x")
+    for i in range(6):                                            # diaphragm flange bolts, both sides
+        a = math.pi / 2 + i * math.pi / 3
+        y, z = m(YP) + m(106) * math.sin(a), m(106) * math.cos(a)
+        k.hexnut(m(10), m(9), at=(m(-197), y, z), axis="x")
+        k.hexnut(m(10), m(9), at=(m(-235), y, z), axis="x")
+        k.cyl(m(5.5), m(54), at=(m(-216), y, z), axis="x", seg=12)
+    k.mat("dark", 0x1d2226, rough=0.55, metal=0.4)
+    k.hexnut(m(19), m(14), at=(m(-160), m(YP + 100), 0), axis="y")                 # plug
+    k.mat("brass", 0xc9b27a, rough=0.35, metal=0.8)                 # «Р/Г» crank handle 22
+    k.cyl(m(7), m(30), at=(m(-380), m(YP), 0), axis="x", seg=16)
+    k.box((m(12), m(70), m(14)), at=(m(-395), m(YP - 30), 0), bevel=m(3))
+    k.cyl(m(8), m(50), at=(m(-395), m(YP - 62), m(25)), axis="z", seg=20, bevel=m(2))
     return k.finish(col)
 
 
