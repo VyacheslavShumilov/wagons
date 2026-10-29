@@ -526,10 +526,13 @@ function couplers(F,H,ly=1.36){
   const res={};
   [1,-1].forEach(s=>{
     const cn=node(F,e=>[s*1.4*st(e,.45,.8),0,0]);res[s]=cn;
-    add(cn,Bx(.34,.32,.40),C.COUP,'coupler',s*H,1.06,0,MET);
-    add(cn,Bx(.16,.26,.13),C.COUP,'coupler',s*(H+.2),1.06,.12,MET);
-    add(cn,Bx(.12,.28,.15),C.COUP,'coupler',s*(H+.19),1.06,-.13,MET);
-    add(cn,Bx(.7,.17,.19),C.COUP,'coupler',s*(H-.47),1.08,0,MET);
+    /* coupler body: Blender model blender/coupler_sa3.py (from the STL), origin = tip of the large tooth
+       on the coupler axis, head along +x; the box primitives stay until it loads */
+    const cFb=[add(cn,Bx(.34,.32,.40),C.COUP,'coupler',s*H,1.06,0,MET),
+      add(cn,Bx(.16,.26,.13),C.COUP,'coupler',s*(H+.2),1.06,.12,MET),
+      add(cn,Bx(.12,.28,.15),C.COUP,'coupler',s*(H+.19),1.06,-.13,MET),
+      add(cn,Bx(.7,.17,.19),C.COUP,'coupler',s*(H-.47),1.08,0,MET)];
+    glbPart(cn,'models/coupler_sa3.glb',{pos:[s*(H+.28),1.06,0],rot:[0,s>0?0:PI,0],part:'coupler',fallback:cFb});
     add(cn,Cy(.02,.02,1.6,8),C.STEEL,'uncoupling',s*(H-.24),ly,.62,{rx:PI/2});
     add(cn,Cy(.02,.02,.35,8),C.STEEL,'uncoupling',s*(H-.24),ly-.16,1.42);
     add(cn,Bx(.06,.12,.05),C.STEEL,'uncoupling',s*(H-.24),ly-.06,-.18);
