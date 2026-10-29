@@ -16,7 +16,8 @@ Construction (Руководство ПКБ ЦВ № 922-2021, п. 2.1; РГУП
   cover 25 that ends in the boss of the «Р/Г» release-mode switch with crank handle 22.
 Overall sizes are not given in the sources; proportions follow the renders (reservoir ≈ 430 mm high
 with its top plate). The main and line parts sit off-centre on the two mating faces, the
-unions and the switch shaft on a raised pad on the main-part face.
+unions and the switch shaft on a raised pad on the main-part face, to the right of the main
+part when you face it (as on the render).
 
 Origin = centre of the reservoir. Local axes as on the site: x along the car, the line part
 towards -x and the main part towards +x, y up, z across (pipe unions on the +z face).
@@ -29,7 +30,7 @@ except ImportError:          # pasted after wagonkit.py into a single script
 
 OUT = "air_distributor_483.glb"
 HX = 100         # half size of the reservoir along x: its two mating faces are at x = ±HX
-YP, ZP = -25, -40    # axis of the main and line parts on those faces (off-centre, as on the renders)
+YP, ZP = -25, 40    # axis of the main and line parts on those faces (off-centre, as on the renders)
 
 
 def m(v):
@@ -57,8 +58,8 @@ def reservoir(col):
     for y in (135, -165):                                         # round cast pockets above and below
         k.cyl(m(26), m(5), at=(m(HX + 2), m(y), m(ZP)), axis="x", seg=40, bevel=m(1.5))
         k.cyl(m(26), m(5), at=(m(-HX - 2), m(y), m(ZP)), axis="x", seg=40, bevel=m(1.5))
-    rr(k, 80, 150, 16, 18, (HX + 9, -100, 80), "x", 4)           # raised pad: switch shaft and unions
-    k.cyl(m(17), m(14), at=(m(HX + 22), m(20), m(85)), axis="x", seg=24, bevel=m(2))      # switch boss
+    rr(k, 80, 150, 16, 18, (HX + 9, -100, -80), "x", 4)           # raised pad: switch shaft and unions
+    k.cyl(m(17), m(14), at=(m(HX + 22), m(20), m(-85)), axis="x", seg=24, bevel=m(2))      # switch boss
 
     k.mat("steel", 0x9aa3aa, rough=0.35, metal=0.75)
     for sx in (1, -1):                                            # M20 bolts: head on the plate, nut under the shelf
@@ -68,11 +69,11 @@ def reservoir(col):
             k.cyl(m(10), m(180), at=(x, m(140), z), axis="y", seg=16)
             k.hexnut(m(16), m(16), at=(x, m(61), z), axis="y")
     k.mat("dark", 0x1d2226, rough=0.55, metal=0.4)                 # unions ТМ, ЗР, ТЦ and the switch shaft
-    for y, z in ((-150, 58), (-110, 83), (-70, 106)):
+    for y, z in ((-150, -58), (-110, -83), (-70, -106)):
         k.hexnut(m(20), m(30), at=(m(HX + 33), m(y), m(z)), axis="x", bevel=m(2))
         k.cyl(m(13), m(32), at=(m(HX + 64), m(y), m(z)), axis="x", seg=24, bevel=m(2))
-    k.cyl(m(8), m(34), at=(m(HX + 44), m(20), m(85)), axis="x", seg=16)
-    k.box((m(10), m(12), m(12)), at=(m(HX + 63), m(20), m(85)), bevel=m(1))
+    k.cyl(m(8), m(34), at=(m(HX + 44), m(20), m(-85)), axis="x", seg=16)
+    k.box((m(10), m(12), m(12)), at=(m(HX + 63), m(20), m(-85)), bevel=m(1))
     return k.finish(col)
 
 
@@ -82,14 +83,14 @@ def main_part(col):
     k.mat("body", 0x4f7f9c, rough=0.6, metal=0.3)
     k.cyl(m(85), m(16), at=(m(x0 + 8), m(YP), m(ZP)), axis="x", seg=64, bevel=m(3))          # mating flange
     k.cyl(m(68), m(60), at=(m(x0 + 46), m(YP), m(ZP)), axis="x", seg=56, bevel=m(6))         # body 37
-    k.cyl(m(22), m(80), at=(m(x0 + 52), m(YP - 40), m(ZP + 30)), axis="x", seg=28, bevel=m(4))  # cast channel
+    k.cyl(m(22), m(80), at=(m(x0 + 52), m(YP - 40), m(ZP - 30)), axis="x", seg=28, bevel=m(4))  # cast channel
     k.cyl(m(24), m(80), at=(m(x0 + 44), m(YP + 88), m(ZP)), axis="y", seg=28, bevel=m(4))    # boss with plug
     k.cyl(m(80), m(12), at=(m(x0 + 82), m(YP), m(ZP)), axis="x", seg=64, bevel=m(3))         # body flange
     k.mat("cover", 0x5a8aa8, rough=0.55, metal=0.3)
     k.cyl(m(98), m(54), at=(m(x0 + 115), m(YP), m(ZP)), axis="x", seg=72, bevel=m(14))       # cover 1 (drum)
-    k.box((m(34), m(64), m(50)), at=(m(x0 + 150), m(YP - 58), m(ZP - 50)), bevel=m(10))      # release valve cap
-    k.cyl(m(30), m(76), at=(m(x0 + 166), m(YP - 58), m(ZP - 50)), axis="y", seg=36, bevel=m(4))
-    k.cyl(m(30), m(12), at=(m(x0 + 166), m(YP - 14), m(ZP - 50)), axis="y", r2=m(18), seg=36)
+    k.box((m(34), m(64), m(50)), at=(m(x0 + 150), m(YP - 58), m(ZP + 50)), bevel=m(10))      # release valve cap
+    k.cyl(m(30), m(76), at=(m(x0 + 166), m(YP - 58), m(ZP + 50)), axis="y", seg=36, bevel=m(4))
+    k.cyl(m(30), m(12), at=(m(x0 + 166), m(YP - 14), m(ZP + 50)), axis="y", r2=m(18), seg=36)
     k.mat("steel", 0x9aa3aa, rough=0.35, metal=0.75)
     for i in range(4):
         a = math.pi / 4 + i * math.pi / 2
@@ -97,14 +98,14 @@ def main_part(col):
         k.hexnut(m(10), m(9), at=(m(x0 + 20), y, z), axis="x")                                # flange nuts
         y, z = m(YP) + m(84) * math.sin(a), m(ZP) + m(84) * math.cos(a)
         k.hexnut(m(10), m(9), at=(m(x0 + 146), y, z), axis="x")                               # cover nuts
-    k.cyl(m(5), m(3), at=(m(x0 + 143), m(YP + 30), m(ZP + 12)), axis="x", seg=16)             # lead seal
-    k.cyl(m(0.8), m(55), at=(m(x0 + 144), m(YP + 58), m(ZP + 14)), axis="y", seg=6)           # seal wire
+    k.cyl(m(5), m(3), at=(m(x0 + 143), m(YP + 30), m(ZP - 12)), axis="x", seg=16)             # lead seal
+    k.cyl(m(0.8), m(55), at=(m(x0 + 144), m(YP + 58), m(ZP - 14)), axis="y", seg=6)           # seal wire
     k.mat("dark", 0x1d2226, rough=0.55, metal=0.4)
     k.hexnut(m(20), m(16), at=(m(x0 + 44), m(YP + 136), m(ZP)), axis="y")                     # plug
-    k.cyl(m(7), m(2), at=(m(x0 + 166), m(YP - 7), m(ZP - 50)), axis="y", seg=16)              # vent hole
+    k.cyl(m(7), m(2), at=(m(x0 + 166), m(YP - 7), m(ZP + 50)), axis="y", seg=16)              # vent hole
     k.mat("brass", 0xc9b27a, rough=0.35, metal=0.8)
-    k.cyl(m(10), m(4), at=(m(x0 + 166), m(YP - 98), m(ZP - 50)), axis="y", seg=20)            # washer
-    k.cyl(m(6), m(80), at=(m(x0 + 166), m(YP - 136), m(ZP - 50)), axis="y", seg=16)           # release pusher
+    k.cyl(m(10), m(4), at=(m(x0 + 166), m(YP - 98), m(ZP + 50)), axis="y", seg=20)            # washer
+    k.cyl(m(6), m(80), at=(m(x0 + 166), m(YP - 136), m(ZP + 50)), axis="y", seg=16)           # release pusher
     return k.finish(col)
 
 
