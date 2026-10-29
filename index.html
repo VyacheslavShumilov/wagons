@@ -2860,6 +2860,14 @@ const BRAKE_RIG={
     const ctx={b:0,t:0,cyc:false,upd:[]};
     const rodM=(p,r,c,part,seg_=10)=>add(p,Cy(r,r,1,seg_),c,part,0,0,0,{r:.4,m:.6});
     const barM=(p,w,d,c,part)=>add(p,Bx(w,1,d),c,part,0,0,0,{r:.5,m:.4});
+    /* double lever: two cheeks with a gap for the rod eyes, driven by seg() like barM (local y = length).
+       The cheeks are offset along local z; holes are dark through-cylinders at fractions of the length. */
+    const dblBar=(p,w,t,gap,c,part,holes=[],L0=1)=>{
+      const g=group(p,0,0,0);
+      [1,-1].forEach(s=>add(g,Bx(w,1,t),c,part,0,0,s*(gap/2+t/2),{r:.5,m:.4}));
+      holes.forEach(f=>{const h=add(g,Cy(.012,.012,gap+2*t+.004,12),0x14181b,part,0,f,0,{rx:PI/2,r:.8,m:.2});h.scale.set(1,1,1/L0);});
+      return g;
+    };
     const pinZ=(p,x,y,z,L=.1)=>add(p,Cy(.02,.02,L,10),BRK.PIN,'pins',x,y,z,{rx:PI/2,r:.3,m:.8});
     const pinY=(p,x,y,z,L=.12)=>add(p,Cy(.02,.02,L,10),BRK.PIN,'pins',x,y,z,{r:.3,m:.8});
     const tube=(p,pts,r,c,part)=>add(p,new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts.map(q=>new V3(...q)),false,'centripetal'),Math.max(24,pts.length*14),r,8,false),c,part,0,0,0,{r:.5,m:.4});
@@ -2935,10 +2943,10 @@ const BRAKE_RIG={
       /* vertical levers */
       const xLi=xc+din*.25,xLo=xc+dout*.25;
       B.xLi=xLi;B.xLo=xLo;
-      B.lev.in=barM(bg,.07,.035,BRK.LEV,'vlever');B.lev.out=barM(bg,.07,.035,BRK.LEV,'vlever');
+      B.lev.in=dblBar(bg,.07,.012,.048,BRK.LEV,'vlever');B.lev.out=dblBar(bg,.07,.012,.048,BRK.LEV,'vlever');
       B.tie=rodM(bg,.022,BRK.ROD,'vl_tie');
       B.link=barM(bg,.05,.03,BRK.ROD,'link');
-      B.pins=[0,1,2,3,4,5,6].map(()=>pinZ(bg,0,0,0,.09));
+      B.pins=[0,1,2,3,4,5,6].map(()=>pinZ(bg,0,0,0,.1));
       bogies.push(B);
     });
 
@@ -3031,12 +3039,14 @@ const BRAKE_RIG={
     /* ---- horizontal levers, tie, rods ---- */
     const ARM=.38;
     const lev1=group(root,0,0,0);
-    add(lev1,Bx(.08,.06,2*ARM+.06),BRK.LEV,'hlever',RE0,BR_YC,BR_ZC,{r:.5,m:.4});
+    [1,-1].forEach(s=>add(lev1,Bx(.09,.014,2*ARM+.07),BRK.LEV,'hlever',RE0,BR_YC+s*.049,BR_ZC,{r:.5,m:.4}));   /* double lever */
+    [.075,.15].forEach(d=>add(lev1,Cy(.012,.012,.116,12),0x14181b,'hlever',RE0,BR_YC,BR_ZC+ARM-d,{r:.8,m:.2}));  /* tie holes */
     add(lev1,Bx(.1,.12,.1),0xb9c0c6,'piston_rod',RE0-.05,BR_YC,BR_ZC);
-    pinY(lev1,RE0,BR_YC,BR_ZC,.16);pinY(lev1,RE0,BR_YC,BR_ZC+ARM,.12);pinY(lev1,RE0,BR_YC-.05,BR_ZC-ARM,.16);
+    pinY(lev1,RE0,BR_YC,BR_ZC,.16);pinY(lev1,RE0,BR_YC,BR_ZC+ARM,.14);pinY(lev1,RE0,BR_YC-.05,BR_ZC-ARM,.16);
     pinY(lev1,RE0,BR_YC-.03,.2,.12);
-    const lev2=barM(root,.08,.06,BRK.LEV,'hlever');
-    const lev2pins=[pinY(root,0,0,0,.12),pinY(root,0,0,0,.12)];
+    const L2L=2*ARM*1.08;
+    const lev2=dblBar(root,.09,.014,.084,BRK.LEV,'hlever',[(ARM-.075)/L2L,(ARM-.15)/L2L],L2L);
+    const lev2pins=[pinY(root,0,0,0,.14),pinY(root,0,0,0,.14)];
     const tieG=group(root,0,0,0);
     const tieZ=BR_ZC+ARM;
     {const m=rodM(tieG,.024,BRK.ROD,'hl_tie');seg(m,new V3(L2X+.04,BR_YC,tieZ),new V3(RE0-.04,BR_YC,tieZ));
