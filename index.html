@@ -2974,15 +2974,19 @@ const BRAKE_RIG={
     tube(airN,[[VX,VY+.16,VZ],[VX-.15,.99,-.05],[-1.72,.95,.28],[-1.68,.82,BR_ZC]],.02,BRK.AIR,'air_pipes');
     /* load-proportional valve 265A-1 on the frame, support beam on the bogie side frames */
     const AX=BR_X+.36,AZ=-.7;
-    add(airN,Cy(.085,.085,.22,24),0x3f5d73,'autoreg',AX,1.08,AZ,{r:.5,m:.35});
-    add(airN,Cy(.1,.1,.03,24),0x3f5d73,'autoreg',AX,1.2,AZ);
-    add(airN,Bx(.14,.05,.05),0x2b3532,'autoreg',AX,1.1,AZ+.1);
-    add(airN,Cy(.025,.025,.06,10),BRK.PIN,'autoreg',AX,.94,AZ,{r:.3,m:.8});
-    add(airN,Cy(.035,.035,.03,12),0x3f5d73,'autoreg',AX,.965,AZ);
+    /* load-sensing valve 265A-1: Blender model blender/autoregime_265a1.py, origin = stop tip.
+       Its mounting flange faces the bolster (model turned 180°), the stop rests on the support beam. */
+    const AY=.954,arFb=[];
+    arFb.push(add(airN,Cy(.085,.085,.22,24),0x3f5d73,'autoreg',AX,1.08,AZ,{r:.5,m:.35}));
+    arFb.push(add(airN,Cy(.1,.1,.03,24),0x3f5d73,'autoreg',AX,1.2,AZ));
+    arFb.push(add(airN,Bx(.14,.05,.05),0x2b3532,'autoreg',AX,1.1,AZ+.1));
+    arFb.push(add(airN,Cy(.025,.025,.06,10),BRK.PIN,'autoreg',AX,.94,AZ,{r:.3,m:.8}));
+    arFb.push(add(airN,Cy(.035,.035,.03,12),0x3f5d73,'autoreg',AX,.965,AZ));
+    glbPart(airN,'models/autoregime_265a1.glb',{pos:[AX,AY,AZ],rot:[0,PI,0],part:'autoreg',fallback:arFb});
     add(airN,Bx(.1,.03,2.04),0x6b737a,'support_beam',AX,.935,0,{r:.5,m:.4});
     [1,-1].forEach(s=>add(airN,Bx(.14,.03,.18),0x6b737a,'support_beam',AX,.935,s*1.02));
-    tube(airN,[[VX+.25,VY+.14,VZ],[-.8,.99,-.34],[1.0,.99,-.34],[AX-.4,1.0,-.36],[AX-.12,1.08,AZ]],.02,BRK.AIR,'air_pipes');
-    tube(airN,[[AX-.08,1.13,AZ+.04],[AX-.5,1.03,-.44],[1.1,.98,-.44],[.55,.98,.02],[.25,.985,BR_ZC-.05]],.02,BRK.AIR,'air_pipes');
+    tube(airN,[[VX+.25,VY+.14,VZ],[-.8,.99,-.34],[1.0,.99,-.34],[AX-.42,1.1,-.5],[AX-.32,AY+.306,AZ],[AX-.2,AY+.306,AZ]],.02,BRK.AIR,'air_pipes');
+    tube(airN,[[AX-.2,AY+.222,AZ],[AX-.32,AY+.222,AZ],[AX-.5,1.03,-.44],[1.1,.98,-.44],[.55,.98,.02],[.25,.985,BR_ZC-.05]],.02,BRK.AIR,'air_pipes');
     /* arrow towards the locomotive */
     {const am=new THREE.MeshBasicMaterial({color:0xf0b43c,toneMapped:false});const ag=group(root,0,0,0);
      const sh=new THREE.Mesh(Cy(.06,.06,.55,16),am);sh.rotation.z=PI/2;sh.position.set(-6.85,PY,PZ);ag.add(sh);
@@ -2998,8 +3002,8 @@ const BRAKE_RIG={
     mkFlow('MAG',[[-6.44,PY-.46,PZ+.12],[-6.42,PY-.3,PZ+.08],[-6.33,PY-.08,PZ+.02],[-6.2,PY,PZ],[-3,PY,PZ],[0,PY,PZ],[3,PY,PZ],[6.06,PY,PZ]]);
     mkFlow('BR',[[TX,PY,PZ],[TX,PY-.18,PZ],[TX+.1,.86,PZ+.08],[-1.62,.84,-.3]]);
     mkFlow('RES',[[VX,VY+.16,VZ],[VX-.15,.99,-.05],[-1.72,.95,.28],[-1.68,.82,BR_ZC]]);
-    mkFlow('VA',[[VX+.25,VY+.14,VZ],[-.8,.99,-.34],[1.0,.99,-.34],[AX-.4,1.0,-.36],[AX-.12,1.08,AZ]]);
-    mkFlow('AC',[[AX-.08,1.13,AZ+.04],[AX-.5,1.03,-.44],[1.1,.98,-.44],[.55,.98,.02],[.25,.985,BR_ZC-.05]]);
+    mkFlow('VA',[[VX+.25,VY+.14,VZ],[-.8,.99,-.34],[1.0,.99,-.34],[AX-.42,1.1,-.5],[AX-.32,AY+.306,AZ],[AX-.2,AY+.306,AZ]]);
+    mkFlow('AC',[[AX-.2,AY+.222,AZ],[AX-.32,AY+.222,AZ],[AX-.5,1.03,-.44],[1.1,.98,-.44],[.55,.98,.02],[.25,.985,BR_ZC-.05]]);
     mkFlow('EX',[[VX+.25,VY-.13,VZ],[VX+.3,VY-.35,VZ-.1],[VX+.42,VY-.62,VZ-.32]]);
 
     /* ---- brake cylinder 188B ---- */
