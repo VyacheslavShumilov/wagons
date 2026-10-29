@@ -270,6 +270,7 @@ img{max-width:100%}
 </div>
 
 <script src="three.min.js"></script>
+<script src="GLTFLoader.js"></script>
 <script>
 (function(){
 "use strict";
@@ -394,6 +395,54 @@ function node(parent,fn,x=0,y=0,z=0){
 }
 function group(parent,x=0,y=0,z=0){const g=new THREE.Group();g.position.set(x,y,z);parent.add(g);return g;}
 function anchor(parent,x,y,z){const o=new THREE.Object3D();o.position.set(x,y,z);parent.add(o);return o;}
+
+/* ================= Blender models (GLB) =================
+   Detailed parts are modelled in Blender by the scripts in blender/ and exported to models/*.glb.
+   glbPart() puts such a model into a wagon: until the file has loaded, or if it fails to load
+   (e.g. the page is opened straight from disk), the primitive meshes passed as `fallback` stay.
+   Each mesh takes its part id from the "part" custom property set in Blender, else opts.part. */
+const GLB={loader:THREE.GLTFLoader?new THREE.GLTFLoader():null,cache:{},gen:0};
+function loadGLB(url){
+  if(!GLB.loader)return Promise.reject(new Error('GLTFLoader missing'));
+  return GLB.cache[url]||(GLB.cache[url]=new Promise((res,rej)=>GLB.loader.load(url,g=>res(g.scene),undefined,rej)));
+}
+function unregMesh(m){
+  const p=m.userData.part;
+  if(p&&REG.meshesOf[p]){const a=REG.meshesOf[p],i=a.indexOf(m);if(i>=0)a.splice(i,1);if(!a.length)delete REG.meshesOf[p];}
+  const j=REG.pickables.indexOf(m);if(j>=0)REG.pickables.splice(j,1);
+  if(m.parent)m.parent.remove(m);
+  if(m.geometry)m.geometry.dispose();
+  (Array.isArray(m.material)?m.material:[m.material]).forEach(mt=>mt&&mt.dispose());
+}
+function partAnchorOf(pid){
+  const m=REG.meshesOf[pid]&&REG.meshesOf[pid][0];if(!m)return;
+  m.geometry.computeBoundingBox();const c=new V3();m.geometry.boundingBox.getCenter(c);
+  REG.partAnchor[pid]=anchor(m,c.x,c.y,c.z);
+}
+function glbPart(parent,url,opts={}){
+  const g=new THREE.Group();parent.add(g);
+  if(opts.pos)g.position.set(...opts.pos);
+  if(opts.rot)g.rotation.set(...opts.rot);
+  const gen=GLB.gen,fallback=opts.fallback||[];
+  loadGLB(url).then(src=>{
+    if(gen!==GLB.gen||!g.parent)return;            /* another wagon is shown by now */
+    const inst=src.clone(true),parts=new Set();
+    inst.traverse(o=>{
+      if(!o.isMesh)return;
+      o.userData.glb=true;                          /* geometry is shared with the cache */
+      o.material=Array.isArray(o.material)?o.material.map(mt=>mt.clone()):o.material.clone();
+      o.castShadow=o.receiveShadow=true;
+      let pid=null;for(let n=o;n&&!pid;n=n.parent)pid=n.userData&&n.userData.part;
+      pid=pid||opts.part;
+      if(pid&&W.P[pid]){o.userData.part=pid;(REG.meshesOf[pid]=REG.meshesOf[pid]||[]).push(o);REG.pickables.push(o);parts.add(pid);}
+    });
+    fallback.forEach(m=>{if(m.userData.part)parts.add(m.userData.part);unregMesh(m);});
+    g.add(inst);
+    parts.forEach(partAnchorOf);
+    applyVisual();renderLabels();
+  }).catch(e=>console.warn('GLB model not loaded, primitives kept:',url,e));
+  return g;
+}
 const _d=new V3();
 function seg(m,a,b){
   _d.subVectors(b,a);const L=_d.length();
@@ -2955,12 +3004,15 @@ const BRAKE_RIG={
 
     /* ---- brake cylinder 188B ---- */
     const C0=-.05,C1=.55,CR=.178;
-    add(root,Cy(CR,CR,C1-C0-.04,40),BRK.CYL,'brake_cylinder',(C0+C1)/2,BR_YC,BR_ZC,{rz:PI/2,r:.55,m:.35});
-    add(root,Cy(CR+.02,CR+.02,.04,40),BRK.CYL2,'brake_cylinder',C1-.02,BR_YC,BR_ZC,{rz:PI/2,r:.5,m:.35});
-    add(root,new THREE.SphereGeometry(CR+.01,32,12,0,PI*2,0,PI/2.6),BRK.CYL2,'brake_cylinder',C0+.06,BR_YC,BR_ZC,{rz:PI/2,r:.5,m:.35,ds:true});
-    add(root,Cy(CR+.02,CR+.02,.04,40),BRK.CYL2,'brake_cylinder',C0+.02,BR_YC,BR_ZC,{rz:PI/2,r:.5,m:.35});
-    add(root,Cy(.07,.07,.08,20),BRK.CYL2,'brake_cylinder',C1+.04,BR_YC,BR_ZC,{rz:PI/2});
-    [C0+.12,C1-.12].forEach(x=>add(root,Bx(.08,.06,.34),BRK.CYL2,'brake_cylinder',x,BR_YC+CR+.01,BR_ZC));
+    /* primitive stand-in, replaced by the Blender model blender/brake_cylinder_188b.py once it loads */
+    const cylFb=[];const fb=m=>{cylFb.push(m);return m;};
+    fb(add(root,Cy(CR,CR,C1-C0-.04,40),BRK.CYL,'brake_cylinder',(C0+C1)/2,BR_YC,BR_ZC,{rz:PI/2,r:.55,m:.35}));
+    fb(add(root,Cy(CR+.02,CR+.02,.04,40),BRK.CYL2,'brake_cylinder',C1-.02,BR_YC,BR_ZC,{rz:PI/2,r:.5,m:.35}));
+    fb(add(root,new THREE.SphereGeometry(CR+.01,32,12,0,PI*2,0,PI/2.6),BRK.CYL2,'brake_cylinder',C0+.06,BR_YC,BR_ZC,{rz:PI/2,r:.5,m:.35,ds:true}));
+    fb(add(root,Cy(CR+.02,CR+.02,.04,40),BRK.CYL2,'brake_cylinder',C0+.02,BR_YC,BR_ZC,{rz:PI/2,r:.5,m:.35}));
+    fb(add(root,Cy(.07,.07,.08,20),BRK.CYL2,'brake_cylinder',C1+.04,BR_YC,BR_ZC,{rz:PI/2}));
+    [C0+.12,C1-.12].forEach(x=>fb(add(root,Bx(.08,.06,.34),BRK.CYL2,'brake_cylinder',x,BR_YC+CR+.01,BR_ZC)));
+    glbPart(root,'models/brake_cylinder_188b.glb',{pos:[(C0+C1)/2,BR_YC,BR_ZC],part:'brake_cylinder',fallback:cylFb});
     const rodPiston=rodM(root,.042,0xb9c0c6,'piston_rod',16);
     const RE0=.85; /* rod end, released */
     /* bracket on the rear cover with the second horizontal lever */
@@ -3838,7 +3890,7 @@ function quizNext(){
 function quizAnswer(id){const q=state.quiz;if(!q||!q.q||q.q.ans)return;q.q.ans=id;if(id===q.q.target)q.score++;renderInfo();}
 function quizExit(){state.quiz=null;goStep(state.step);}
 
-function disposeTree(o){o.traverse(n=>{if(n.geometry)n.geometry.dispose();if(n.material)(Array.isArray(n.material)?n.material:[n.material]).forEach(mt=>{if(mt.map)mt.map.dispose();mt.dispose();});});}
+function disposeTree(o){o.traverse(n=>{if(n.geometry&&!n.userData.glb)n.geometry.dispose();if(n.material)(Array.isArray(n.material)?n.material:[n.material]).forEach(mt=>{if(mt.map)mt.map.dispose();mt.dispose();});});}
 function loadWagon(id,keepCam){
   clearTimeout(actTimer);flowCap.hidden=true;locoTag.hidden=true;
   if(curRoot){scene.remove(curRoot);disposeTree(curRoot);}
@@ -3846,6 +3898,7 @@ function loadWagon(id,keepCam){
   {const fg=W.fog||[34,80];scene.fog.near=fg[0];scene.fog.far=fg[1];const sr=W.shadowR||15;Object.assign(key.shadow.camera,{left:-sr,right:sr,top:sr,bottom:-sr});key.shadow.camera.updateProjectionMatrix();
    for(const o of scene.children)if(o.userData.track)o.visible=!W.ownTrack;
    camera.far=W.camFar||200;camera.updateProjectionMatrix();}
+  GLB.gen++;
   REG={meshesOf:{},pickables:[],nodes:[],partAnchor:{},sysAnchor:{}};
   curRoot=new THREE.Group();scene.add(curRoot);
   CTX=W.build(curRoot);
