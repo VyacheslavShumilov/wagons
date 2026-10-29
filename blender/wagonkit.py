@@ -154,6 +154,24 @@ class Kit:
                 self.bm.faces.new((a[i], a[j], b[j], b[i]))
         self._claim(bevel)
 
+    def stl(self, tris, rows):
+        """Add STL triangles; rows = 4x4 matrix (file units -> site metres). Shared corners are welded."""
+        M = SITE_TO_BLENDER @ Matrix(rows)
+        verts = {}
+        for tri in tris:
+            vs = []
+            for p in tri:
+                key = (round(p[0], 4), round(p[1], 4), round(p[2], 4))
+                if key not in verts:
+                    verts[key] = self.bm.verts.new(M @ Vector(p))
+                vs.append(verts[key])
+            if len(set(vs)) == 3:
+                try:
+                    self.bm.faces.new(vs)
+                except ValueError:       # duplicate triangle
+                    pass
+        self._claim()
+
     def hexnut(self, r, depth, at=(0, 0, 0), axis="z", bevel=0.0015):
         self.cyl(r, depth, at, axis, seg=6, bevel=bevel)
 
@@ -311,6 +329,41 @@ def outline(sdf, box, step):
     def area(l):
         return abs(sum(l[i][0] * l[i - 1][1] - l[i - 1][0] * l[i][1] for i in range(len(l)))) / 2
     return max(loops, key=area)
+
+
+# ---- STL input (models supplied as STL, e.g. print models) -------------------------
+def read_stl(data):
+    """Binary STL bytes -> list of triangles ((x, y, z), (x, y, z), (x, y, z)) in file units."""
+    import struct
+    n = struct.unpack_from("<I", data, 80)[0]
+    return [(lambda v: (v[0:3], v[3:6], v[6:9]))(struct.unpack_from("<9f", data, 84 + 50 * i + 12))
+            for i in range(n)]
+
+
+def split_pieces(tris):
+    """Connected pieces of a triangle soup, largest first."""
+    index, parent = {}, []
+    def vid(p):
+        key = (round(p[0], 4), round(p[1], 4), round(p[2], 4))
+        if key not in index:
+            index[key] = len(parent)
+            parent.append(len(parent))
+        return index[key]
+    def root(i):
+        while parent[i] != i:
+            parent[i] = parent[parent[i]]
+            i = parent[i]
+        return i
+    ids = [tuple(vid(p) for p in t) for t in tris]
+    for a, b, c in ids:
+        for x, y in ((a, b), (a, c)):
+            rx, ry = root(x), root(y)
+            if rx != ry:
+                parent[rx] = ry
+    groups = {}
+    for t, (a, _, _) in zip(tris, ids):
+        groups.setdefault(root(a), []).append(t)
+    return sorted(groups.values(), key=len, reverse=True)
 
 
 def site_collection(name):
