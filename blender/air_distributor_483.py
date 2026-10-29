@@ -12,8 +12,9 @@ Construction (Руководство ПКБ ЦВ № 922-2021, п. 2.1; РГУП
   on the other;
 - main part 270.023: mating flange, waisted body 37 with a plugged boss on top, cover 1 on four
   bolts with the release valve cap at the bottom and its brass pusher (поводок) pointing down;
-- line part 483.010: square flange, body 28 with a plugged boss, big round flange to the conical
-  cover 25 that ends in the boss of the «Р/Г» release-mode switch with crank handle 22.
+- line part 483.010 (after a photo on a car): tall flange, waisted ribbed body 28 with plugged
+  bosses, diaphragm flange, elongated tapering cover 25 ending in the «Р/Г» switch boss with an
+  L-shaped handle 22.
 Overall sizes are not given in the sources; proportions follow the renders (reservoir ≈ 430 mm high
 with its top plate). The main and line parts sit off-centre on the two mating faces, the
 unions and the switch shaft on a raised pad on the main-part face, to the right of the main
@@ -110,35 +111,43 @@ def main_part(col):
 
 
 def line_part(col):
+    """Line part 483.010 as on the photo of a car: tall flange to the reservoir, ribbed body 28
+    with plugged bosses on top and bottom, diaphragm flange, elongated tapering cover 25 that
+    ends in the boss of the «Р/Г» switch with an L-shaped handle."""
     k = Kit("vr_line", "ВР483_Магистральная_часть_483.010")
     x0 = -HX - 8
     k.mat("body", 0x4f7f9c, rough=0.6, metal=0.3)
-    rr(k, 186, 186, 24, 16, (x0 - 8, YP, ZP), "x", 3)                                       # square flange of body 28
-    k.cyl(m(56), m(60), at=(m(x0 - 46), m(YP), m(ZP)), axis="x", seg=48, bevel=m(4))         # body
-    for y in (62, -62):                                                                       # cast air channels
-        k.cyl(m(16), m(62), at=(m(x0 - 46), m(YP + y), m(ZP + 10)), axis="x", seg=24, bevel=m(3))
-    k.box((m(60), m(150), m(26)), at=(m(x0 - 46), m(YP), m(ZP - 30)), bevel=m(6))           # web
-    k.cyl(m(20), m(44), at=(m(x0 - 35), m(YP + 72), m(ZP)), axis="y", seg=28, bevel=m(3))   # boss with plug
-    k.cyl(m(118), m(30), at=(m(x0 - 91), m(YP), m(ZP)), axis="x", seg=72, bevel=m(5))       # diaphragm flange
+    rr(k, 160, 220, 18, 16, (x0 - 8, YP, ZP), "x", 3)                                       # tall flange of body 28
+    k.loft([(0, 132, 150, 34), (-28, 112, 122, 40), (-58, 136, 162, 44)],
+           at=(m(x0 - 16), m(YP), m(ZP)), axis="x", bevel=m(3))                               # body 28 (waisted)
+    for dz in (-38, 38):                                                                      # cast ribs on the body
+        k.box((m(54), m(150), m(10)), at=(m(x0 - 45), m(YP), m(ZP + dz)), bevel=m(3))
+    k.cyl(m(22), m(46), at=(m(x0 - 45), m(YP + 82), m(ZP)), axis="y", seg=28, bevel=m(3))   # boss with plug, top
+    k.cyl(m(24), m(44), at=(m(x0 - 30), m(YP - 92), m(ZP)), axis="y", seg=28, bevel=m(3))   # atmospheric boss, bottom
+    k.cyl(m(105), m(26), at=(m(x0 - 88), m(YP), m(ZP)), axis="x", seg=72, bevel=m(5))       # diaphragm flange
     k.mat("cover", 0x5a8aa8, rough=0.55, metal=0.3)
-    k.cyl(m(96), m(95), at=(m(x0 - 153), m(YP), m(ZP)), axis="x", r2=m(34), seg=64, bevel=m(3))  # conical cover 25
-    k.cyl(m(30), m(46), at=(m(x0 - 220), m(YP), m(ZP)), axis="x", seg=40, bevel=m(4))       # switch boss
+    k.loft([(0, 150, 168, 44), (-16, 122, 136, 36), (-80, 86, 96, 28), (-134, 60, 64, 22)],
+           at=(m(x0 - 101), m(YP), m(ZP)), axis="x", bevel=m(3))                              # tapering cover 25
+    k.loft([(0, 16, 190, 7), (-120, 10, 90, 4)], at=(m(x0 - 103), m(YP), m(ZP)), axis="x", bevel=m(1))   # ribs top/bottom
+    k.loft([(0, 190, 16, 7), (-120, 90, 10, 4)], at=(m(x0 - 103), m(YP), m(ZP)), axis="x", bevel=m(1))   # ribs at the sides
+    k.cyl(m(30), m(40), at=(m(x0 - 255), m(YP), m(ZP)), axis="x", seg=40, bevel=m(4))       # switch boss
     k.mat("steel", 0x9aa3aa, rough=0.35, metal=0.75)
-    for sy in (1, -1):                                                                        # square flange bolts
+    for sy in (1, -1):                                                                        # flange bolts at the corners
         for sz in (1, -1):
-            k.hexnut(m(10), m(9), at=(m(x0 - 20), m(YP) + sy * m(70), m(ZP) + sz * m(70)), axis="x")
-    for i in range(6):                                                                        # diaphragm flange bolts
-        a = math.pi / 2 + i * math.pi / 3
-        y, z = m(YP) + m(106) * math.sin(a), m(ZP) + m(106) * math.cos(a)
-        k.hexnut(m(10), m(9), at=(m(x0 - 72), y, z), axis="x")
-        k.hexnut(m(10), m(9), at=(m(x0 - 110), y, z), axis="x")
-        k.cyl(m(5.5), m(54), at=(m(x0 - 91), y, z), axis="x", seg=12)
+            k.hexnut(m(10), m(9), at=(m(x0 - 20), m(YP) + sy * m(90), m(ZP) + sz * m(58)), axis="x")
+    for i in range(8):                                                                        # diaphragm flange bolts
+        a = math.pi / 8 + i * math.pi / 4
+        y, z = m(YP) + m(93) * math.sin(a), m(ZP) + m(93) * math.cos(a)
+        k.hexnut(m(10), m(9), at=(m(x0 - 71), y, z), axis="x")
+        k.hexnut(m(10), m(9), at=(m(x0 - 105), y, z), axis="x")
+        k.cyl(m(5.5), m(48), at=(m(x0 - 88), y, z), axis="x", seg=12)
     k.mat("dark", 0x1d2226, rough=0.55, metal=0.4)
-    k.hexnut(m(19), m(14), at=(m(x0 - 35), m(YP + 100), m(ZP)), axis="y")                   # plug
-    k.mat("brass", 0xc9b27a, rough=0.35, metal=0.8)                                           # «Р/Г» crank handle 22
-    k.cyl(m(7), m(30), at=(m(x0 - 255), m(YP), m(ZP)), axis="x", seg=16)
-    k.box((m(12), m(70), m(14)), at=(m(x0 - 270), m(YP - 30), m(ZP)), bevel=m(3))
-    k.cyl(m(8), m(50), at=(m(x0 - 270), m(YP - 62), m(ZP + 25)), axis="z", seg=20, bevel=m(2))
+    k.hexnut(m(20), m(14), at=(m(x0 - 45), m(YP + 112), m(ZP)), axis="y")                   # plug, top
+    k.cyl(m(22), m(14), at=(m(x0 - 30), m(YP - 120), m(ZP)), axis="y", seg=32, bevel=m(3))  # atmospheric plug, bottom
+    k.mat("brass", 0xc9b27a, rough=0.35, metal=0.8)                                           # «Р/Г» handle 22 (L-shaped)
+    k.cyl(m(7), m(40), at=(m(x0 - 295), m(YP), m(ZP)), axis="x", seg=16)
+    k.cyl(m(7), m(86), at=(m(x0 - 312), m(YP - 40), m(ZP)), axis="y", seg=16)
+    k.cyl(m(9), m(16), at=(m(x0 - 312), m(YP - 88), m(ZP)), axis="y", seg=16, bevel=m(2))
     return k.finish(col)
 
 

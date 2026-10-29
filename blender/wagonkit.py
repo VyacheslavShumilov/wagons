@@ -117,6 +117,43 @@ class Kit:
             self.bm.faces.new((rows[0][i], rows[0][j], rows[1][j], rows[1][i]))
         self._claim(bevel)
 
+    def loft(self, sections, at=(0, 0, 0), axis="x", n=64, bevel=0.0):
+        """Casting that runs through rounded-rectangle sections [(t, w, h, r), ...] along a site axis.
+        axis="x": w is along z, h along y. Ends are capped."""
+        ax, ay, az = at
+
+        def ring(w, h, r):
+            r = min(r, w / 2 - 1e-6, h / 2 - 1e-6)
+            pts = []
+            for i in range(n):                       # sample by angle, corners rounded with radius r
+                a = 2 * math.pi * (i + .5) / n
+                c, s_ = math.cos(a), math.sin(a)
+                k_ = max(abs(c) / (w / 2), abs(s_) / (h / 2))
+                u, v = c / k_, s_ / k_                 # point on the sharp rectangle
+                cu, cv = max(min(u, w / 2 - r), -(w / 2 - r)), max(min(v, h / 2 - r), -(h / 2 - r))
+                du, dv = u - cu, v - cv
+                dl = math.hypot(du, dv)
+                if dl > 1e-9:
+                    u, v = cu + du / dl * r, cv + dv / dl * r
+                pts.append((u, v))
+            return pts
+
+        def site(t, u, v):
+            if axis == "x":
+                return Vector((ax + t, ay + v, az + u))
+            if axis == "z":
+                return Vector((ax + u, ay + v, az + t))
+            return Vector((ax + u, ay + t, az + v))
+        rows = [[self.bm.verts.new(SITE_TO_BLENDER @ site(t, u, v)) for (u, v) in ring(w, h, r)]
+                for (t, w, h, r) in sections]
+        self.bm.faces.new(rows[0])
+        self.bm.faces.new(list(reversed(rows[-1])))
+        for a, b in zip(rows, rows[1:]):
+            for i in range(n):
+                j = (i + 1) % n
+                self.bm.faces.new((a[i], a[j], b[j], b[i]))
+        self._claim(bevel)
+
     def hexnut(self, r, depth, at=(0, 0, 0), axis="z", bevel=0.0015):
         self.cyl(r, depth, at, axis, seg=6, bevel=bevel)
 
