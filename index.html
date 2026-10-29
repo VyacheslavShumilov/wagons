@@ -2957,21 +2957,24 @@ const BRAKE_RIG={
     const TX=-1.9;
     add(airN,Cy(.055,.055,.16,14),BRK.AIR,'tee',TX,PY-.1,PZ,{r:.45,m:.5});
     add(airN,Bx(.09,.06,.09),BRK.AIR,'tee',TX,PY-.01,PZ);
-    tube(airN,[[TX,PY-.18,PZ],[TX+.1,.86,PZ+.08],[-1.62,.84,-.3]],.022,BRK.AIR,'air_pipes');
-    /* control valve No.483 */
-    const VX=-1.25,VY=.84,VZ=-.3;
-    add(airN,Bx(.3,.3,.32),BRK.VR,'vr_chamber',VX,VY,VZ,{r:.55,m:.3});
-    add(airN,Bx(.2,.12,.12),BRK.VR,'vr_chamber',VX,VY+.2,VZ);
-    add(airN,Bx(.16,.22,.24),0x5a8aa8,'vr_line',VX-.23,VY,VZ,{r:.5,m:.3});
-    add(airN,Cy(.05,.05,.04,16),0x5a8aa8,'vr_line',VX-.32,VY+.03,VZ,{rz:PI/2});
-    add(airN,Bx(.2,.26,.26),0x4f7f9c,'vr_main',VX+.25,VY,VZ,{r:.5,m:.3});
-    add(airN,Bx(.03,.08,.12),BRK.RED,'vr_main',VX+.36,VY+.05,VZ,{r:.5});
+    /* control valve No.483: Blender model blender/air_distributor_483.py (three parts), origin = centre of
+       the two-chamber reservoir, its top plate under the frame; unions ТМ / ЗР / ТЦ on the main-part face. */
+    const VX=-1.25,VY=.784,VZ=-.3,vrFb=[];
+    const VU=[[VX+.164,VY-.15,VZ-.058],[VX+.164,VY-.11,VZ-.083],[VX+.164,VY-.07,VZ-.106]];  /* union tips */
+    vrFb.push(add(airN,Bx(.3,.3,.32),BRK.VR,'vr_chamber',VX,VY,VZ,{r:.55,m:.3}));
+    vrFb.push(add(airN,Bx(.2,.12,.12),BRK.VR,'vr_chamber',VX,VY+.2,VZ));
+    vrFb.push(add(airN,Bx(.16,.22,.24),0x5a8aa8,'vr_line',VX-.23,VY,VZ,{r:.5,m:.3}));
+    vrFb.push(add(airN,Cy(.05,.05,.04,16),0x5a8aa8,'vr_line',VX-.32,VY+.03,VZ,{rz:PI/2}));
+    vrFb.push(add(airN,Bx(.2,.26,.26),0x4f7f9c,'vr_main',VX+.25,VY,VZ,{r:.5,m:.3}));
+    vrFb.push(add(airN,Bx(.03,.08,.12),BRK.RED,'vr_main',VX+.36,VY+.05,VZ,{r:.5}));
+    glbPart(airN,'models/air_distributor_483.glb',{pos:[VX,VY,VZ],fallback:vrFb});
+    tube(airN,[[TX,PY-.18,PZ],[TX+.1,.56,PZ+.05],[VX+.28,.56,VZ-.06],[VX+.28,VU[0][1],VU[0][2]],VU[0]],.022,BRK.AIR,'air_pipes');
     /* auxiliary reservoir R7-78 */
     const RX=-1.2,RL=.84;
     add(airN,Cy(.18,.18,RL,32),BRK.RES,'reservoir',RX,BR_YC-.02,BR_ZC,{rz:PI/2,r:.5,m:.4});
     [1,-1].forEach(s=>{add(airN,new THREE.SphereGeometry(.18,24,12,0,PI*2,0,PI/2),BRK.RES,'reservoir',RX+s*RL/2,BR_YC-.02,BR_ZC,{rz:-s*PI/2,r:.5,m:.4,ds:true});
       add(airN,Bx(.05,.04,.4),0x2b3532,'reservoir',RX+s*.25,.995,BR_ZC);});
-    tube(airN,[[VX,VY+.16,VZ],[VX-.15,.99,-.05],[-1.72,.95,.28],[-1.68,.82,BR_ZC]],.02,BRK.AIR,'air_pipes');
+    tube(airN,[VU[1],[VX+.24,VU[1][1],VU[1][2]],[-.86,.64,0],[-.68,.72,BR_ZC],[-.76,BR_YC-.02,BR_ZC]],.02,BRK.AIR,'air_pipes');
     /* load-proportional valve 265A-1 on the frame, support beam on the bogie side frames */
     const AX=BR_X+.36,AZ=-.7;
     /* load-sensing valve 265A-1: Blender model blender/autoregime_265a1.py, origin = stop tip.
@@ -2985,7 +2988,7 @@ const BRAKE_RIG={
     glbPart(airN,'models/autoregime_265a1.glb',{pos:[AX,AY,AZ],rot:[0,PI,0],part:'autoreg',fallback:arFb});
     add(airN,Bx(.1,.03,2.04),0x6b737a,'support_beam',AX,.935,0,{r:.5,m:.4});
     [1,-1].forEach(s=>add(airN,Bx(.14,.03,.18),0x6b737a,'support_beam',AX,.935,s*1.02));
-    tube(airN,[[VX+.25,VY+.14,VZ],[-.8,.99,-.34],[1.0,.99,-.34],[AX-.42,1.1,-.5],[AX-.32,AY+.306,AZ],[AX-.2,AY+.306,AZ]],.02,BRK.AIR,'air_pipes');
+    tube(airN,[VU[2],[VX+.24,VU[2][1],VU[2][2]],[-.8,.99,-.34],[1.0,.99,-.34],[AX-.42,1.1,-.5],[AX-.32,AY+.306,AZ],[AX-.2,AY+.306,AZ]],.02,BRK.AIR,'air_pipes');
     tube(airN,[[AX-.2,AY+.222,AZ],[AX-.32,AY+.222,AZ],[AX-.5,1.03,-.44],[1.1,.98,-.44],[.55,.98,.02],[.25,.985,BR_ZC-.05]],.02,BRK.AIR,'air_pipes');
     /* arrow towards the locomotive */
     {const am=new THREE.MeshBasicMaterial({color:0xf0b43c,toneMapped:false});const ag=group(root,0,0,0);
@@ -3000,11 +3003,11 @@ const BRAKE_RIG={
       for(let i=0;i<n;i++){const m=new THREE.Mesh(dotGeo,mat);m.visible=false;airN.add(m);ds.push(m);}
       ctx.flows[key]={c,len,ds,mat};};
     mkFlow('MAG',[[-6.44,PY-.46,PZ+.12],[-6.42,PY-.3,PZ+.08],[-6.33,PY-.08,PZ+.02],[-6.2,PY,PZ],[-3,PY,PZ],[0,PY,PZ],[3,PY,PZ],[6.06,PY,PZ]]);
-    mkFlow('BR',[[TX,PY,PZ],[TX,PY-.18,PZ],[TX+.1,.86,PZ+.08],[-1.62,.84,-.3]]);
-    mkFlow('RES',[[VX,VY+.16,VZ],[VX-.15,.99,-.05],[-1.72,.95,.28],[-1.68,.82,BR_ZC]]);
-    mkFlow('VA',[[VX+.25,VY+.14,VZ],[-.8,.99,-.34],[1.0,.99,-.34],[AX-.42,1.1,-.5],[AX-.32,AY+.306,AZ],[AX-.2,AY+.306,AZ]]);
+    mkFlow('BR',[[TX,PY,PZ],[TX,PY-.18,PZ],[TX+.1,.56,PZ+.05],[VX+.28,.56,VZ-.06],[VX+.28,VU[0][1],VU[0][2]],VU[0]]);
+    mkFlow('RES',[VU[1],[VX+.24,VU[1][1],VU[1][2]],[-.86,.64,0],[-.68,.72,BR_ZC],[-.76,BR_YC-.02,BR_ZC]]);
+    mkFlow('VA',[VU[2],[VX+.24,VU[2][1],VU[2][2]],[-.8,.99,-.34],[1.0,.99,-.34],[AX-.42,1.1,-.5],[AX-.32,AY+.306,AZ],[AX-.2,AY+.306,AZ]]);
     mkFlow('AC',[[AX-.2,AY+.222,AZ],[AX-.32,AY+.222,AZ],[AX-.5,1.03,-.44],[1.1,.98,-.44],[.55,.98,.02],[.25,.985,BR_ZC-.05]]);
-    mkFlow('EX',[[VX+.25,VY-.13,VZ],[VX+.3,VY-.35,VZ-.1],[VX+.42,VY-.62,VZ-.32]]);
+    mkFlow('EX',[[VX+.274,VY-.04,VZ+.09],[VX+.3,VY-.3,VZ+.05],[VX+.42,VY-.56,VZ-.1]]);
 
     /* ---- brake cylinder 188B ---- */
     const C0=-.05,C1=.55,CR=.178;
