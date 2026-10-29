@@ -12,7 +12,7 @@ and its mounting flange (which bolts to the bracket on the car frame), z across 
 """
 import math
 try:
-    from wagonkit import Kit, site_collection
+    from wagonkit import Kit, site_collection, sd_circle, sd_rrect, sd_union, outline
 except ImportError:          # pasted after wagonkit.py into a single script
     pass
 
@@ -37,28 +37,28 @@ def build(collection=None):
     k.cyl(m(42), m(24), at=(m(4), m(292), 0), axis="y", r2=m(72), seg=48)          # flare to the chamber
     k.cyl(m(88), m(52), at=(m(10), m(330), 0), axis="y", seg=64, bevel=m(6))       # round damper chamber
     k.cyl(m(94), m(10), at=(m(10), m(351), 0), axis="y", seg=64, bevel=m(3))       # chamber flange
-    k.box((m(70), m(130), m(56)), at=(m(42), m(250), 0), bevel=m(10))              # web body -> relay part
-    # relay part: two round sections joined by a web, each with its own flange
-    for y, r in ((YU, RU), (YL, RL)):
-        k.cyl(m(r), m(95), at=(m(102), m(y), 0), axis="x", seg=48, bevel=m(6))
-        k.cyl(m(r + 6), m(12), at=(m(144), m(y), 0), axis="x", seg=48, bevel=m(3))
-    k.box((m(95), m(84), m(64)), at=(m(102), m((YU + YL) / 2), 0), bevel=m(12))
-    # mounting flange part: two round lobes with the port bosses, ears for the bracket bolts
-    for y, r in ((YU, RU), (YL, RL)):
-        k.cyl(m(r + 6), m(24), at=(m(164), m(y), 0), axis="x", seg=48, bevel=m(4))
-        k.ring(m(22), m(12), m(24), at=(m(188), m(y), 0), axis="x", seg=32, bevel=m(2))   # G 3/4 boss
-    k.box((m(24), m(84), m(80)), at=(m(164), m((YU + YL) / 2), 0), bevel=m(10))
+    # cheek: flat cast wall from the body to the relay part (planar faces, big round lower corner)
+    cheek = sd_union([sd_rrect(68, 232, 104, 196, 36), sd_rrect(40, 300, 60, 60, 20)], k=20)
+    k.prism([(m(x), m(y)) for x, y in outline(cheek, (0, 120, 140, 345), 2)], m(80), axis="z", bevel=m(4))
+    for y, r in ((YU, RU - 4), (YL, RL)):                       # round section bodies behind the housing
+        k.cyl(m(r), m(30), at=(m(104), m(y), 0), axis="x", seg=48, bevel=m(5))
+
+    # relay housing and mounting flange: two plates with the same figured outline, gasket between
+    tabs = [(m_r * math.cos(a), y + m_r * math.sin(a)) for y, r in ((YU, RU), (YL, RL))
+            for m_r in (r + 11,) for a in ang]
+    lobes = [sd_circle(0, YU, RU + 6), sd_circle(0, YL, RL + 6)] + [sd_circle(z, y, 12) for z, y in tabs]
+    housing = sd_union(lobes, k=16)
+    flange = sd_union(lobes + [sd_rrect(0, 290, 190, 36, 16)], k=16)
+    box = (-150, 140, 150, 380)
+    k.prism([(m(z), m(y)) for z, y in outline(housing, box, 2)], m(32), at=(m(134), 0, 0), bevel=m(4))
+    k.prism([(m(z), m(y)) for z, y in outline(flange, box, 2)], m(23.5), at=(m(164.25), 0, 0), bevel=m(4))
+    for s in (1, -1):                                           # ears for the bracket bolts
+        k.ring(m(26), m(11), m(18), at=(m(164.25), m(290), s * m(116)), axis="x", seg=32, bevel=m(2))
+    for y in (YU, YL):                                          # G 3/4 port bosses
+        k.ring(m(22), m(12), m(24), at=(m(188), m(y), 0), axis="x", seg=32, bevel=m(2))
+    # bosses of the adjusting screws on both faces of the cheek (section Б-Б)
     for s in (1, -1):
-        k.box((m(18), m(40), m(70)), at=(m(166), m(290), s * m(80)), bevel=m(8))
-        k.ring(m(26), m(11), m(18), at=(m(166), m(290), s * m(116)), axis="x", seg=32, bevel=m(2))
-    # bolt lugs around both sections
-    for y, r in ((YU, RU), (YL, RL)):
-        for a in ang:
-            k.cyl(m(10), m(46), at=(m(156), m(y) + m(r + 12) * math.sin(a), m(r + 12) * math.cos(a)),
-                  axis="x", seg=16, bevel=m(2))
-    # bosses of the two adjusting screws on the body (section Б-Б)
-    for s in (1, -1):
-        k.cyl(m(13), m(22), at=(m(20), m(228), s * m(40)), axis="z", seg=20, bevel=m(1.5))
+        k.cyl(m(12), m(8), at=(m(42), m(262), s * m(44)), axis="z", seg=20, bevel=m(1.5))
 
     # ---- round cover of the chamber, stop sleeve, gaskets ----------------------------
     k.mat("cover", 0x56707f, rough=0.5, metal=0.35)
@@ -66,8 +66,8 @@ def build(collection=None):
     k.cyl(m(70), m(6), at=(m(10), m(367), 0), axis="y", r2=m(62), seg=64, bevel=m(1.5))
     k.cyl(m(29), m(34), at=(0, m(81), 0), axis="y", seg=40, bevel=m(2))             # guide sleeve
     k.mat("gasket", 0xb8bec3, rough=0.7, metal=0.1)
-    for y, r in ((YU, RU), (YL, RL)):
-        k.cyl(m(r + 5.5), m(2.5), at=(m(151.2), m(y), 0), axis="x", seg=48)
+    k.prism([(m(z), m(y)) for z, y in outline(sd_union(lobes, k=16, offset=-1.5), box, 2)],
+            m(2.5), at=(m(151.25), 0, 0))
 
     # ---- stop (упор), nut, fasteners --------------------------------------------
     k.mat("steel", 0x9aa3aa, rough=0.35, metal=0.75)
@@ -77,12 +77,12 @@ def build(collection=None):
     for i in range(8):                                                               # cover bolts on a circle
         a = math.pi / 8 + i * math.pi / 4
         k.hexnut(m(8), m(7), at=(m(10) + m(94) * math.cos(a), m(367.5), m(94) * math.sin(a)), axis="y")
-    for y, r in ((YU, RU), (YL, RL)):                                                # section bolts
-        for a in ang:
-            k.hexnut(m(8), m(8), at=(m(183), m(y) + m(r + 12) * math.sin(a), m(r + 12) * math.cos(a)), axis="x")
-            k.hexnut(m(8), m(8), at=(m(129), m(y) + m(r + 12) * math.sin(a), m(r + 12) * math.cos(a)), axis="x")
-    for s in (1, -1):                                                                # adjusting screws
-        k.hexnut(m(8), m(8), at=(m(20), m(228), s * m(55)), axis="z")
+    for z, y in tabs:                                                                # bolts through the tabs
+        k.hexnut(m(8), m(8), at=(m(180), m(y), m(z)), axis="x")
+        k.hexnut(m(8), m(8), at=(m(114), m(y), m(z)), axis="x")
+    for s in (1, -1):                                                                # adjusting screws + lock tabs
+        k.hexnut(m(9), m(8), at=(m(42), m(262), s * m(52)), axis="z")
+        k.box((m(30), m(9), m(2)), at=(m(62), m(268), s * m(49)), bevel=m(0.5))
     k.mat("dark", 0x22282d, rough=0.6, metal=0.4)
     for s in (1, -1):                                                                # slot of the fork
         k.box((m(12), m(22), m(3)), at=(0, m(27), s * m(21.5)))

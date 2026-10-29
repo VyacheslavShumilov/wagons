@@ -98,6 +98,25 @@ class Kit:
                               matrix=self.place(at, axis, rot))
         self._claim(bevel)
 
+    def prism(self, loop, depth, at=(0, 0, 0), axis="x", bevel=0.0):
+        """Plate of the given outline. axis="x": loop is (z, y); axis="z": loop is (x, y); axis="y": (x, z)."""
+        ax, ay, az = at
+        def site(u, v, w):
+            if axis == "x":
+                return Vector((ax + w, ay + v, az + u))
+            if axis == "z":
+                return Vector((ax + u, ay + v, az + w))
+            return Vector((ax + u, ay + w, az + v))
+        rows = [[self.bm.verts.new(SITE_TO_BLENDER @ site(u, v, w)) for (u, v) in loop]
+                for w in (-depth / 2, depth / 2)]
+        n = len(loop)
+        self.bm.faces.new(rows[0])
+        self.bm.faces.new(list(reversed(rows[1])))
+        for i in range(n):
+            j = (i + 1) % n
+            self.bm.faces.new((rows[0][i], rows[0][j], rows[1][j], rows[1][i]))
+        self._claim(bevel)
+
     def hexnut(self, r, depth, at=(0, 0, 0), axis="z", bevel=0.0015):
         self.cyl(r, depth, at, axis, seg=6, bevel=bevel)
 
@@ -171,6 +190,90 @@ class Kit:
         obj["part"] = self.part            # exported to glTF extras -> three.js userData.part
         (collection or bpy.context.scene.collection).objects.link(obj)
         return obj
+
+
+
+# ---- smooth 2D outlines for cast plates ------------------------------------------
+# Shapes are signed distance functions in the outline's own plane (mm or m, any unit):
+# negative inside. Union them with smin() to get cast-looking fillets at the joints,
+# then outline() traces the zero contour and Kit.prism() extrudes it into a plate.
+def sd_circle(cx, cy, r):
+    return lambda x, y: math.hypot(x - cx, y - cy) - r
+
+
+def sd_rrect(cx, cy, w, h, r):
+    def f(x, y):
+        qx = abs(x - cx) - w / 2 + r
+        qy = abs(y - cy) - h / 2 + r
+        return math.hypot(max(qx, 0), max(qy, 0)) + min(max(qx, qy), 0) - r
+    return f
+
+
+def smin(a, b, k):
+    h = max(k - abs(a - b), 0) / k
+    return min(a, b) - h * h * k * 0.25
+
+
+def sd_union(shapes, k=0.0, offset=0.0):
+    """Union of shapes; k > 0 rounds the inner corners with radius ~k; offset grows (+) or shrinks (-)."""
+    def f(x, y):
+        d = shapes[0](x, y)
+        for s in shapes[1:]:
+            d = smin(d, s(x, y), k) if k > 0 else min(d, s(x, y))
+        return d - offset
+    return f
+
+
+def outline(sdf, box, step):
+    """Outer zero contour of sdf inside box=(x0, y0, x1, y1) by marching squares -> [(x, y), ...]."""
+    x0, y0, x1, y1 = box
+    nx, ny = int((x1 - x0) / step) + 2, int((y1 - y0) / step) + 2
+    v = [[sdf(x0 + i * step, y0 + j * step) for j in range(ny)] for i in range(nx)]
+
+    def pt(key):
+        kind, i, j = key
+        if kind == "h":
+            a, b = v[i][j], v[i + 1][j]
+            return (x0 + (i + a / (a - b)) * step, y0 + j * step)
+        a, b = v[i][j], v[i][j + 1]
+        return (x0 + i * step, y0 + (j + a / (a - b)) * step)
+
+    nbr = {}
+
+    def link(p, q):
+        nbr.setdefault(p, []).append(q)
+        nbr.setdefault(q, []).append(p)
+
+    for i in range(nx - 1):
+        for j in range(ny - 1):
+            a, b, c, d = v[i][j] < 0, v[i + 1][j] < 0, v[i + 1][j + 1] < 0, v[i][j + 1] < 0
+            if a == b == c == d:
+                continue
+            e = {"B": ("h", i, j), "R": ("v", i + 1, j), "T": ("h", i, j + 1), "L": ("v", i, j)}
+            cut = [k for k, (p, q) in (("B", (a, b)), ("R", (b, c)), ("T", (c, d)), ("L", (d, a))) if p != q]
+            if len(cut) == 2:
+                link(e[cut[0]], e[cut[1]])
+            else:                                   # saddle: decide by the cell centre
+                centre = sdf(x0 + (i + .5) * step, y0 + (j + .5) * step) < 0
+                if centre == a:
+                    link(e["B"], e["R"]); link(e["T"], e["L"])
+                else:
+                    link(e["L"], e["B"]); link(e["R"], e["T"])
+    loops, seen = [], set()
+    for start in nbr:
+        if start in seen:
+            continue
+        loop, prev, cur = [], None, start
+        while cur not in seen:
+            seen.add(cur)
+            loop.append(pt(cur))
+            nxt = [q for q in nbr[cur] if q != prev and q not in seen]
+            prev, cur = cur, (nxt[0] if nxt else start)
+        loops.append(loop)
+
+    def area(l):
+        return abs(sum(l[i][0] * l[i - 1][1] - l[i - 1][0] * l[i][1] for i in range(len(l)))) / 2
+    return max(loops, key=area)
 
 
 def site_collection(name):
