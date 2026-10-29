@@ -423,6 +423,7 @@ function glbPart(parent,url,opts={}){
   const g=new THREE.Group();parent.add(g);
   if(opts.pos)g.position.set(...opts.pos);
   if(opts.rot)g.rotation.set(...opts.rot);
+  if(opts.scale)g.scale.set(...opts.scale);
   const gen=GLB.gen,fallback=opts.fallback||[];
   loadGLB(url).then(src=>{
     if(gen!==GLB.gen||!g.parent)return;            /* another wagon is shown by now */
@@ -2721,7 +2722,9 @@ const BOGIE_DET={
       colFl.forEach(g=>add(n,g,BG.CAST,'side_frame',0,0,s*BG_SZ,{r:.75,m:.3}));
       add(n,Bx(.7,.03,.22),BG.CAST2,'side_frame',0,.235,s*BG_SZ);
       [[-.36,.74],[.36,.74]].forEach(([x,y])=>add(n,Bx(.1,.08,.12),BG.CAST2,'side_frame',x,y-.02,s*(BG_SZ-.16)));
-      [-1,1].forEach(k=>add(n,Bx(.02,.22,.18),BG.FP,'friction_plate',k*.322,.6,s*BG_SZ,{r:.4,m:.6}));
+      /* friction plates 100.00.008-2: Blender model from the STL (blender/friction_plate_18100.py) */
+      [-1,1].forEach(k=>{const fb=add(n,Bx(.02,.22,.18),BG.FP,'friction_plate',k*.322,.6,s*BG_SZ,{r:.4,m:.6});
+        glbPart(n,'models/friction_plate_18100.glb',{pos:[k*.327,.6,s*BG_SZ],rot:[0,k>0?0:PI,0],part:'friction_plate',fallback:[fb]});});
     });
     /* ---- bolster ---- */
     const bnN=node(root,e=>[0,.75*st(e,0,.35),0]);
@@ -2747,13 +2750,17 @@ const BOGIE_DET={
     [1,-1].forEach(s=>{
       const spN=node(root,e=>[0,.15*st(e,.3,.6),s*.45*st(e,.3,.6)]);
       const g=group(spN,0,BG_SEAT,s*BG_SZ);ctx.springs.push(g);
-      layout.forEach(([x,z])=>{add(g,hOut,BG.SPR1,'spring_outer',x,0,z,{r:.45,m:.5});add(g,hIn,BG.SPR2,'spring_inner',x,0,z,{r:.45,m:.5});});
+      /* spring sets: Blender model from the STL (blender/spring_set_18100.py), squeezed to the loaded height */
+      layout.forEach(([x,z])=>{const fb=[add(g,hOut,BG.SPR1,'spring_outer',x,0,z,{r:.45,m:.5}),add(g,hIn,BG.SPR2,'spring_inner',x,0,z,{r:.45,m:.5})];
+        glbPart(g,'models/spring_set_18100.glb',{pos:[x,0,z],scale:[.97,H0/.259,.97],fallback:fb});});
       [-1,1].forEach(k=>{
         const wn=node(root,e=>[k*.35*st(e,.3,.6),.5*st(e,.3,.6),s*.45*st(e,.3,.6)]);
         const wg=group(wn,0,0,0);ctx.wedges.push(wg);
         const ws=polyShape([[.2,.0],[.32,.0],[.32,.2],[.26,.2]].map(([x,y])=>[k*x,y]));
         const wgeo=new THREE.ExtrudeGeometry(k>0?ws:polyShape([[-.2,0],[-.26,.2],[-.32,.2],[-.32,0]]),{depth:.18,bevelEnabled:false});wgeo.translate(0,0,-.09);
-        add(wg,wgeo,BG.CAST2,'wedge',0,BG_BB,s*BG_SZ,{r:.6,m:.35});
+        const fb=add(wg,wgeo,BG.CAST2,'wedge',0,BG_BB,s*BG_SZ,{r:.6,m:.35});
+        /* friction wedge with the insert on its inclined face: Blender model from the STL (blender/wedge_18100.py) */
+        glbPart(wg,'models/wedge_18100.glb',{pos:[k*.322,BG_BB,s*BG_SZ],rot:[0,k>0?0:PI,0],part:'wedge',fallback:[fb]});
       });
     });
     /* ---- brake rigging ---- */
