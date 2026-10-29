@@ -36,10 +36,15 @@ def build(collection=None):
     k.cyl(m(36), m(26), at=(0, m(110), 0), axis="y", seg=48, bevel=m(2))           # lower shoulder
     k.cyl(m(42), m(24), at=(m(4), m(292), 0), axis="y", r2=m(72), seg=48)          # flare to the chamber
     k.cyl(m(88), m(52), at=(m(10), m(330), 0), axis="y", seg=64, bevel=m(6))       # round damper chamber
-    k.cyl(m(94), m(10), at=(m(10), m(351), 0), axis="y", seg=64, bevel=m(3))       # chamber flange
-    # cheek: flat cast wall from the body to the relay part (planar faces, big round lower corner)
-    cheek = sd_union([sd_rrect(68, 232, 104, 196, 36), sd_rrect(40, 300, 60, 60, 20)], k=20)
-    k.prism([(m(x), m(y)) for x, y in outline(cheek, (0, 120, 140, 345), 2)], m(80), axis="z", bevel=m(4))
+    k.cyl(m(102), m(10), at=(m(10), m(351), 0), axis="y", seg=64, bevel=m(3))      # chamber flange
+    # lever housing on the side of the body: a tall plate with a rounded lower end, a narrower
+    # web joining it to the body tube and a raised rib along its edge towards the relay part
+    lever = sd_union([sd_rrect(62, 228, 66, 214, 30), sd_rrect(55, 318, 70, 40, 14)], k=18)
+    k.prism([(m(x), m(y)) for x, y in outline(lever, (0, 100, 130, 350), 2)], m(70), axis="z", bevel=m(5))
+    web = sd_rrect(32, 228, 36, 196, 14)
+    k.prism([(m(x), m(y)) for x, y in outline(web, (0, 110, 80, 340), 2)], m(48), axis="z", bevel=m(4))
+    rib = sd_rrect(93, 240, 16, 168, 8)
+    k.prism([(m(x), m(y)) for x, y in outline(rib, (70, 140, 120, 340), 2)], m(76), axis="z", bevel=m(3))
     for y, r in ((YU, RU - 4), (YL, RL)):                       # round section bodies behind the housing
         k.cyl(m(r), m(30), at=(m(104), m(y), 0), axis="x", seg=48, bevel=m(5))
 
@@ -56,9 +61,10 @@ def build(collection=None):
         k.ring(m(26), m(11), m(18), at=(m(164.25), m(290), s * m(116)), axis="x", seg=32, bevel=m(2))
     for y in (YU, YL):                                          # G 3/4 port bosses
         k.ring(m(22), m(12), m(24), at=(m(188), m(y), 0), axis="x", seg=32, bevel=m(2))
-    # bosses of the adjusting screws on both faces of the cheek (section Б-Б)
+    # bosses of the adjusting screw and the lever-axis bolt on both faces (section Б-Б)
     for s in (1, -1):
-        k.cyl(m(12), m(8), at=(m(42), m(262), s * m(44)), axis="z", seg=20, bevel=m(1.5))
+        k.cyl(m(12), m(6), at=(m(48), m(282), s * m(38)), axis="z", seg=20, bevel=m(1.5))
+        k.cyl(m(10), m(5), at=(m(93), m(262), s * m(40)), axis="z", seg=20, bevel=m(1.2))
 
     # ---- round cover of the chamber, stop sleeve, gaskets ----------------------------
     k.mat("cover", 0x56707f, rough=0.5, metal=0.35)
@@ -74,15 +80,21 @@ def build(collection=None):
     k.hexnut(m(21), m(24), at=(0, m(52), 0), axis="y", bevel=m(1.5))                # lock nut
     k.cyl(m(22), m(30), at=(0, m(25), 0), axis="y", seg=32, bevel=m(1.5))          # stop body
     k.cyl(m(12), m(10), at=(0, m(5), 0), axis="y", r2=m(22), seg=32)                # rounded tip
-    for i in range(8):                                                               # cover bolts on a circle
+    for i in range(8):                                     # cover bolts through cover + flange, nuts underneath
         a = math.pi / 8 + i * math.pi / 4
-        k.hexnut(m(8), m(7), at=(m(10) + m(94) * math.cos(a), m(367.5), m(94) * math.sin(a)), axis="y")
+        bx, bz = m(10) + m(94) * math.cos(a), m(94) * math.sin(a)
+        k.hexnut(m(8), m(7), at=(bx, m(367.5), bz), axis="y")                         # head
+        k.cyl(m(4.5), m(38), at=(bx, m(352), bz), axis="y", seg=12)                   # shank
+        k.cyl(m(8.5), m(1.5), at=(bx, m(345.25), bz), axis="y", seg=16)               # washer
+        k.hexnut(m(7.5), m(7), at=(bx, m(341), bz), axis="y")                          # nut
     for z, y in tabs:                                                                # bolts through the tabs
         k.hexnut(m(8), m(8), at=(m(180), m(y), m(z)), axis="x")
         k.hexnut(m(8), m(8), at=(m(114), m(y), m(z)), axis="x")
-    for s in (1, -1):                                                                # adjusting screws + lock tabs
-        k.hexnut(m(9), m(8), at=(m(42), m(262), s * m(52)), axis="z")
-        k.box((m(30), m(9), m(2)), at=(m(62), m(268), s * m(49)), bevel=m(0.5))
+    for s in (1, -1):                                    # adjusting screw with bent lock tab, lever-axis bolt
+        k.hexnut(m(10), m(9), at=(m(48), m(282), s * m(45.5)), axis="z")
+        k.box((m(30), m(10), m(2)), at=(m(70), m(287), s * m(42)), bevel=m(0.5))
+        k.box((m(2), m(10), m(9)), at=(m(84), m(287), s * m(46.5)), bevel=m(0.5))
+        k.hexnut(m(8), m(7), at=(m(93), m(262), s * m(46)), axis="z")
     k.mat("dark", 0x22282d, rough=0.6, metal=0.4)
     for s in (1, -1):                                                                # slot of the fork
         k.box((m(12), m(22), m(3)), at=(0, m(27), s * m(21.5)))
