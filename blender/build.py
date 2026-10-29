@@ -13,7 +13,7 @@ import bpy
 
 HERE = pathlib.Path(__file__).resolve().parent
 MODELS = HERE.parent / "models"
-PARTS = ["brake_cylinder_188b"]          # add new part scripts here
+PARTS = ["brake_cylinder_188b", "autoregime_265a1"]          # add new part scripts here
 
 sys.path.insert(0, str(HERE))
 import wagonkit  # noqa: E402
