@@ -4489,8 +4489,9 @@ const TANK_DET={
     center_sill:TANK.P.center_sill,side_sill:TANK.P.side_sill,body_bolster:TANK.P.body_bolster,end_sill:TANK.P.end_sill,ladder:TANK.P.ladder,
     side_frame:BOGIE_P.side_frame,bogie_bolster:BOGIE_P.bogie_bolster,axle_box:BOGIE_P.axle_box,wheelset:BOGIE_P.wheelset,
     coupler:{...COUPLER_P.coupler,what:'Автосцепка СА-3 с поглощающим аппаратом и расцепным приводом на концевой балке.'},
+    reservoir:BRAKE_P.reservoir,brake_cylinder:BRAKE_P.brake_cylinder,
     brake_shoe:{...BRAKE_P.brake_shoe,name:'Тормозная рычажная передача тележки',what:'Триангели с колодками, вертикальные рычаги и затяжки внутри тележки.'},
-    rigging:{...BRAKE_P.rigging,name:'Тормозное оборудование под рамой',what:'Тормозной цилиндр, запасный резервуар, воздухораспределитель, горизонтальные рычаги и тяги.'},
+    rigging:{...BRAKE_P.rigging,name:'Тормозное оборудование под рамой',what:'Воздухораспределитель, тормозная магистраль, горизонтальные рычаги и тяги рычажной передачи.'},
     brake_pipe:BRAKE_P.brake_pipe
   },
   STEPS:[
@@ -4516,7 +4517,7 @@ const TANK_DET={
       bogB:{fn:e=>[1.6*S(e,.3,.8),0,0],objs:['tk_side_frame_B','tk_wheelset_B','tk_axle_box_B','tk_bogie_bolster_B','tk_brake_shoe_B']},
       cpA:{fn:e=>[-2.6*S(e,.4,.9),0,0],objs:['tk_coupler_A']},
       cpB:{fn:e=>[2.6*S(e,.4,.9),0,0],objs:['tk_coupler_B']},
-      brake:{fn:e=>[0,-.2*S(e,.3,.8),2.0*S(e,.3,.8)],objs:['tk_rigging','tk_brake_pipe']}
+      brake:{fn:e=>[0,-.2*S(e,.3,.8),2.0*S(e,.3,.8)],objs:['tk_rigging','tk_brake_pipe','tk_reservoir','tk_brake_cylinder']}
     });
     REG.sysAnchor={tank:anchor(n.tank,-2.5,4.3,0),top:anchor(n.top,.3,4.7,.4),frame:anchor(root,-2.2,1.25,1.3),drain:anchor(n.tank,0,.85,0),
       bogie:anchor(n.bogA,-3.9,.95,1.1),coupler:anchor(n.cpA,-5.9,1.15,0),brake:anchor(n.brake,1.9,.85,.5)};
