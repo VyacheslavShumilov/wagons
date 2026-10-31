@@ -3220,16 +3220,11 @@ const BOGIE_TK={...BOGIE_DET,
     const gp=(par,name,pos)=>glbPart(par,U,{only:'bg_'+name,pos});
     const L=sz=>sz<0?'p':'n';            /* Blender +Y (letter p) is site -z */
     let ws1=null,ab1=null;
-    const wp=[[.10,.09],[.20,.09],[.22,.045],[.36,.01],[.40,.06],[.47,.065],[.4785,.0],[.485,-.035],[.51,-.045],[.505,-.065],[.46,-.065],[.40,-.06],[.36,-.03],[.22,-.05],[.20,-.10],[.10,-.10],[.10,.09]].map(p=>new THREE.Vector2(p[0],p[1]));
-    const wheelGeo=new THREE.LatheGeometry(wp,112);
-    const ap=[[0,-1.12],[.065,-1.12],[.065,-.98],[.085,-.98],[.085,-.92],[.1,-.90],[.1,-.70],[.088,-.62],[.088,.62],[.1,.70],[.1,.90],[.085,.92],[.085,.98],[.065,.98],[.065,1.12],[0,1.12]].map(p=>new THREE.Vector2(p[0],p[1]));
-    const axleGeo=new THREE.LatheGeometry(ap,64);
     [1,-1].forEach(sx=>{
       const lx=sx>0?'p':'n';
       const wn=node(root,e=>[sx*.55*S(e,.55,.9),0,0]);
       const g=group(wn,sx*BGT_A,BGT_R,0);ctx.wsG.push(g);
-      add(g,axleGeo,0x9aa3aa,'axle',0,0,0,{rx:PI/2,r:.35,m:.7});
-      [1,-1].forEach(s=>{add(g,wheelGeo,BG.WHL,'wheel',0,0,s*.785,{rx:s*PI/2,r:.35,m:.75,ds:true});add(g,Cy(.37,.37,.02,72),BG.DISC,'wheel',0,0,s*.80,{rx:PI/2,r:.7,m:.2});});
+      gp(g,'wheel_'+lx,[-sx*BGT_A,-BGT_R,0]);gp(g,'axle_'+lx,[-sx*BGT_A,-BGT_R,0]);
       [1,-1].forEach(sz=>{
         const bn=node(wn,e=>[0,0,sz*.35*S(e,.5,.8)]);
         ['bearing','adapter','end_cap'].forEach(p=>gp(bn,p+'_'+lx+L(sz)));
@@ -3244,15 +3239,7 @@ const BOGIE_TK={...BOGIE_DET,
     });
     const bnN=node(root,e=>[0,.75*S(e,0,.35),0]);
     const bG=group(bnN,0,0,0);ctx.bolG=bG;
-    gp(bG,'bolster');
-    add(bG,Cy(.22,.22,.04,72),BG.CAST2,'center_bowl',0,.83,0);
-    add(bG,Cy(.22,.22,.035,72,1,true),BG.CAST2,'center_bowl',0,.867,0,{ds:true});
-    add(bG,Cy(.205,.205,.006,72),BG.PAD,'wear_pad',0,.853,0,{r:.8,m:0});
-    {const kp=node(bG,e=>[0,.5*S(e,.1,.4),0]);add(kp,Cy(.025,.025,.32,24),0x9aa3aa,'king_pin',0,.98,0,{m:.6,r:.35});}
-    [1,-1].forEach(sz=>{const z=sz*BG_SB;
-      add(bG,Bx(.34,.03,.21),BG.CAST2,'side_bearer',0,.795,z);
-      add(bG,Bx(.27,.08,.16),BG.CAP,'side_bearer',0,.85,z,{r:.5,m:.3});
-      add(bG,Bx(.23,.012,.12),0x9aa3aa,'side_bearer',0,.896,z,{r:.35,m:.7});});
+    ['bolster','center_bowl','side_bearer'].forEach(p=>gp(bG,p));
     [1,-1].forEach(sz=>{
       const spN=node(root,e=>[0,.15*S(e,.3,.6),sz*.45*S(e,.3,.6)]);
       const g=group(spN,0,BGT_SEAT,0);ctx.springs.push(g);
