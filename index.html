@@ -4721,7 +4721,7 @@ const TANK_WRAP=new Proxy({},{get(t,k){
   const o=TK_VAR==='model'?TANK_DET:TANK,val=o[k];return typeof val==='function'?val.bind(o):val;
 }});
 
-const PLD_URL='models/platform_13_192_01.glb',PLD_HX=6.84,PLD_HY=1.21,PLD_HZ=1.52;
+const PLD_URL='models/platform_13_192_01.glb',PLD_HX=6.92,PLD_HY=1.21,PLD_HZ=1.578;/* hinges chosen so the folded boards clear the frame and lie on the brackets */
 const PLATFORM_DET={
   id:'platform',h1:'Платформа с бортами',
   sub:'',
@@ -4763,9 +4763,10 @@ const PLATFORM_DET={
     });
     /* boards fold down on their hinges at the floor edge */
     const ctx={bCur:0,piv:[]};
-    [['pl_side_board_zp',[0,PLD_HY,PLD_HZ],'x',1],['pl_side_board_zn',[0,PLD_HY,-PLD_HZ],'x',-1],
-     ['pl_end_board_B',[PLD_HX,PLD_HY,0],'z',-1],['pl_end_board_A',[-PLD_HX,PLD_HY,0],'z',1]].forEach(([name,h,ax,sg])=>{
-      const pv=group(n.boards,...h);glbPart(pv,PLD_URL,{only:name,pos:h.map(v=>-v)});ctx.piv.push({pv,ax,sg});
+    /* fold angles: side boards hang on the brackets (180°), end boards stop on their brackets (160°) */
+    [['pl_side_board_zp',[0,PLD_HY,PLD_HZ],'x',1,PI],['pl_side_board_zn',[0,PLD_HY,-PLD_HZ],'x',-1,PI],
+     ['pl_end_board_B',[PLD_HX,PLD_HY,0],'z',-1,PI*160/180],['pl_end_board_A',[-PLD_HX,PLD_HY,0],'z',1,PI*160/180]].forEach(([name,h,ax,sg,amax])=>{
+      const pv=group(n.boards,...h);glbPart(pv,PLD_URL,{only:name,pos:h.map(v=>-v)});ctx.piv.push({pv,ax,sg,amax});
     });
     REG.sysAnchor={frame:anchor(root,-2.2,.95,1.45),deck:anchor(n.boards,2,1.5,1.4),bogie:anchor(n.bogA,-4.86,.95,1.1),coupler:anchor(n.cpA,-6.9,1.1,0),brake:anchor(n.brake,-1.8,.8,.5)};
     return ctx;
@@ -4773,8 +4774,8 @@ const PLATFORM_DET={
   anim(ctx,dt,e,w){
     const T=w.boards?1:0,prev=ctx.bCur;
     ctx.bCur=reduce?T:clamp(ctx.bCur+(T?1:-1)*dt/1.6,0,1);
-    const a=PI*.97*smooth(ctx.bCur);
-    for(const p of ctx.piv)p.pv.rotation[p.ax]=p.sg*a;
+    const k=smooth(ctx.bCur);
+    for(const p of ctx.piv)p.pv.rotation[p.ax]=p.sg*p.amax*k;
     return ctx.bCur!==prev;
   },
   applyStep(s,w){w.boards=!!s.boards;},onCargo(){},action(){}
