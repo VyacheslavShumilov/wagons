@@ -14,6 +14,12 @@ The file three.min.js is the three.js library (https://threejs.org),
 Copyright (c) 2010-2021 three.js authors, distributed under the MIT License;
 it is not covered by this notice.
 
+The 3D models models/tank_15_5103_07.glb and models/platform_13_192_01.glb are
+derived from models purchased on 3ddd.ru and are used on this website with the
+permission of their author. The author of this website holds no rights to
+redistribute them; they are not covered by any permission above and may not be
+downloaded, copied or reused in any form.
+
 ---
 
 © 2026 Вячеслав Шумилов. Все права защищены.
@@ -26,3 +32,7 @@ it is not covered by this notice.
 
 Файл three.min.js — библиотека three.js (https://threejs.org),
 распространяется по лицензии MIT и под это уведомление не подпадает.
+
+3D-модели models/tank_15_5103_07.glb и models/platform_13_192_01.glb сделаны
+на основе моделей, купленных на 3ddd.ru, и используются на сайте с разрешения
+их автора. Скачивать, копировать и использовать их в любом виде нельзя.
