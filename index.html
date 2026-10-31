@@ -3240,6 +3240,7 @@ const BOGIE_TK={...BOGIE_DET,
     const bnN=node(root,e=>[0,.75*S(e,0,.35),0]);
     const bG=group(bnN,0,0,0);ctx.bolG=bG;
     ['bolster','center_bowl','side_bearer'].forEach(p=>gp(bG,p));
+    gp(node(bG,e=>[0,.5*S(e,.1,.4),0]),'king_pin');
     [1,-1].forEach(sz=>{
       const spN=node(root,e=>[0,.15*S(e,.3,.6),sz*.45*S(e,.3,.6)]);
       const g=group(spN,0,BGT_SEAT,0);ctx.springs.push(g);
