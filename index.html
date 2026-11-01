@@ -4882,7 +4882,7 @@ const LOCO={
     {short:'Крыша',sys:'roof',title:'Крыша и холодильник',text:'Крыша собрана из съёмных секций: через них ставят и снимают дизель. В задней части — холодильная камера с жалюзи и вентиляторами.',ex:0,cam:{t:[2,4.6,0],th:.5,ph:.85,r:16}},
     {short:'Рама',sys:'frame',title:'Рама',text:'Кузов и крыша подняты. Рама — главная несущая конструкция секции: на ней стоит всё оборудование, снизу — путеочиститель и навесное оборудование.',ex:.6,cam:{t:[0,1.6,0],th:.5,ph:1.05,r:20}},
     {short:'Тележки',sys:'bogie',title:'Тележки',text:'Секция опирается на две трёхосные тележки. На каждой оси — свой тяговый электродвигатель, диаметр колёс 1050 мм.',ex:0,cam:{t:[-4.9,.8,0],th:.75,ph:1.25,r:8}},
-    {short:'Разборка',title:'Секция в разборе',text:'Секция разобрана на узлы: крыша и кузов с кабиной подняты, тележки выкачены из-под рамы. На раме остались машинное отделение и пульт.',ex:1,cam:{t:[0,4.6,.5],th:.55,ph:1.12,r:40}}
+    {short:'Разборка',title:'Секция в разборе',text:'Секция разобрана на узлы: крыша и кузов с кабиной подняты, тележки выкачены из-под рамы. На раме остались машинное отделение и пульт.',ex:1,cam:{t:[0,4.2,.5],th:.55,ph:1.12,r:46}}
   ],
   ctrl:[],stepActions:[],
   init(){return {};},
@@ -4892,8 +4892,8 @@ const LOCO={
       body:{fn:e=>[0,4.4*S(e,.1,.6),0],objs:['lc_kuzov','lc_kuzov2','lc_zerkala','lc_zhaluzi2']},
       cab:{fn:e=>[0,4.4*S(e,.1,.6),0],objs:['lc_kabina','lc_stekla','lc_cab_fittings']},
       frame:{objs:['lc_kuzov3','lc_niz','lc_engine','lc_cab_desk']},
-      bogA:{fn:e=>[-3.4*S(e,.3,.8),0,0],objs:['lc_bogie_front','lc_wheel_lf_000','lc_wheel_lf_001','lc_wheel_lf_002']},
-      bogB:{fn:e=>[3.4*S(e,.3,.8),0,0],objs:['lc_bogie_front_001','lc_wheel_lf_003','lc_wheel_lf_004','lc_wheel_lf_005']}
+      bogA:{fn:e=>[-6.6*S(e,.3,.8),0,0],objs:['lc_bogie_front','lc_wheel_lf_000','lc_wheel_lf_001','lc_wheel_lf_002']},
+      bogB:{fn:e=>[6.6*S(e,.3,.8),0,0],objs:['lc_bogie_front_001','lc_wheel_lf_003','lc_wheel_lf_004','lc_wheel_lf_005']}
     },locoPaint);
     REG.sysAnchor={cab:anchor(n.cab,-8.0,3.6,1.0),body:anchor(n.body,-2.5,3.2,1.6),roof:anchor(n.roof,2,4.9,.8),frame:anchor(root,3,1.25,1.5),bogie:anchor(n.bogA,-4.9,.9,1.2)};
     return {};
