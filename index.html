@@ -4566,10 +4566,10 @@ const MOTION_WRAP=new Proxy({},{get(t,k){
 }});
 /* ================= Detailed purchased models (used with the author's permission) ================= */
 /* Each object of the .glb is one part (extras.part) and goes into its own node for the exploded view. */
-function detBuild(root,url,groups){
+function detBuild(root,url,groups,onload){
   const nodes={};
   for(const g in groups){const G=groups[g];nodes[g]=G.fn?node(root,G.fn):root;
-    for(const name of G.objs)glbPart(nodes[g],url,{only:name});}
+    for(const name of G.objs)glbPart(nodes[g],url,{only:name,onload});}
   return nodes;
 }
 const TKD_URL='models/tank_15_5103_07.glb';
@@ -4796,6 +4796,35 @@ const PLATFORM_WRAP=new Proxy({},{get(t,k){
 
 /* ================= Locomotive: diesel 2TE116U, one section (models/loco_2te116u.glb, own Blender file) ================= */
 const LOCO_URL='models/loco_2te116u.glb';
+/* livery painted in the shader by height/position, so the stripes stay straight whatever the triangulation:
+   dark green body, light green band, orange panels and black on the front, grey roof edge; lc_PAINTF also paints the frame */
+function locoPaint(inst){
+  const v=h=>{const c=lin(h);return `vec3(${c.r.toFixed(4)},${c.g.toFixed(4)},${c.b.toFixed(4)})`;};
+  inst.traverse(o=>{
+    if(!o.isMesh)return;
+    for(const m of [].concat(o.material)){
+      if(m&&m.name==='lc_GR'){m.color.copy(lin(0x8e9497));continue;}
+      if(!m||!/^lc_PAINT/.test(m.name))continue;
+      const fr=m.name==='lc_PAINTF';
+      m.color.setRGB(1,1,1);
+      m.customProgramCacheKey=()=>'lcpaint'+(fr?1:0);
+      m.onBeforeCompile=sh=>{
+        sh.vertexShader='varying vec3 vLP;\nvarying vec3 vLN;\n'+sh.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nvLP=position;vLN=normal;');
+        sh.fragmentShader='varying vec3 vLP;\nvarying vec3 vLN;\n'+sh.fragmentShader.replace('#include <color_fragment>',`#include <color_fragment>
+  {vec3 DG=${v(0x1f3326)},LG=${v(0x7cc242)},OR=${v(0xef5a3c)},BK=${v(0x141617)},GR=${v(0x8e9497)},UF=${v(0x2b2f33)};
+   float z=vLP.y,ay=abs(vLP.z);vec3 c=DG;
+   bool front=normalize(vLN).x<-.55&&vLP.x<-7.6;
+   if(${fr?'true':'false'}&&z<1.75)c=UF;
+   else if(front){
+     if(z>4.6)c=GR;else if(z>3.08)c=BK;else if(z>2.695)c=(ay>.48&&ay<1.45)?OR:BK;else if(z>2.545)c=BK;
+     else if(z>2.02)c=LG;else if(z>1.96)c=BK;else if(z>1.66)c=(ay>.48&&ay<1.45)?OR:BK;else c=BK;}
+   else{if(z>4.45)c=GR;else if(z>2.02&&z<2.545)c=LG;else if(z<1.45)c=UF;}
+   diffuseColor.rgb=c;}`);
+      };
+      m.needsUpdate=true;
+    }
+  });
+}
 const LOCO={
   id:'loco',h1:'Тепловоз 2ТЭ116У',sub:'',note:'',xraySys:['body','roof'],quizSkip:[],particle:0x888888,
   S:{
@@ -4833,7 +4862,7 @@ const LOCO={
       frame:{objs:['lc_kuzov3','lc_niz']},
       bogA:{fn:e=>[-1.4*S(e,.3,.8),-.3*S(e,.3,.8),0],objs:['lc_bogie_front','lc_wheel_lf_000','lc_wheel_lf_001','lc_wheel_lf_002']},
       bogB:{fn:e=>[1.4*S(e,.3,.8),-.3*S(e,.3,.8),0],objs:['lc_bogie_front_001','lc_wheel_lf_003','lc_wheel_lf_004','lc_wheel_lf_005']}
-    });
+    },locoPaint);
     REG.sysAnchor={cab:anchor(n.cab,-8.4,3.4,1.0),body:anchor(n.body,-2.5,3.2,1.6),roof:anchor(n.roof,2,4.9,.8),frame:anchor(root,3,1.25,1.5),bogie:anchor(n.bogA,-4.9,.9,1.2)};
     return {};
   },
