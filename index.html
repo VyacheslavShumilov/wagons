@@ -283,6 +283,13 @@ img{max-width:100%}
   <p class="copy" data-i18n>© 2026 Шумилов Вячеслав. Все права защищены.</p>
 </div>
 
+<script>
+/* GoatCounter (smgr-wagons.goatcounter.com): visits are counted only on the published site; every tab (#hash) is its own page */
+window.goatcounter={no_onload:true};var GC_LAST='';
+function gcHit(){try{if(!/\.github\.io$/.test(location.hostname))return;var g=window.goatcounter,p=location.pathname+(location.hash||'');
+if(!g||!g.count||p===GC_LAST)return;GC_LAST=p;g.count({path:p,title:document.title});}catch(e){}}
+</script>
+<script data-goatcounter="https://smgr-wagons.goatcounter.com/count" async src="https://gc.zgo.at/count.js" onload="gcHit()"></script>
 <script src="three.min.js"></script>
 <script src="GLTFLoader.js"></script>
 <script>
@@ -5156,7 +5163,7 @@ function loadWagon(id,keepCam){
   }
   state.w=W.init();state.quiz=null;state.part=null;state.hover=null;state.sys=null;explodeCur=0;
   clearP();renderStatic();goStep(0);if(!keepCam)setView(W.STEPS[0].cam,0);
-  try{history.replaceState(null,'','#'+(W.hashId?W.hashId():W.id));}catch(e){}
+  try{history.replaceState(null,'','#'+(W.hashId?W.hashId():W.id));}catch(e){}gcHit();
 }
 
 /* ================= Pointer input ================= */
