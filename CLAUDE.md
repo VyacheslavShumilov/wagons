@@ -32,12 +32,13 @@
 Превью-артефакт на claude.ai не отдаёт `.glb`: для него модель конвертируется во встроенный glTF с именем `*.gltf.json`.
 
 ## Разрез и размеры
-- «Разрез» (правая панель, вкладки с `W.section:true` — пока только полувагон): `cut`, `setCut(mode)`, `applyCut()` — плоскость отсечения на всех
+- «Разрез» (правая панель, все вкладки кроме «В пути»; `W.section=false` — выключить): `cut`, `setCut(mode)`, `applyCut()` — плоскость отсечения на всех
   материалах вагона (свои плоскости материалов сохраняются в `userData.clip0`), обратные грани — заливка сечения
   (сталь — красная, груз и безымянные меши — свой цвет). Модели, загруженные позже, режутся в `glbPart`.
-- Студийный вид (`W.studio:true`, пока только полувагон): отражения считаются в шейдере (`ShaderChunk.lights_fragment_maps`,
+- Студийный вид (все вкладки; `W.studio=false` — выключить): отражения считаются в шейдере (`ShaderChunk.lights_fragment_maps`,
   define `STUDIO` через `studioize()`), свет — `studioLights()`. PMREM/scene.environment не использовать: в тестовом браузере даёт чёрный экран.
-  Окрашенная сталь с износом — `weatherParts(root, parts, {rough, metal, bump})`, текстуры `WX`.
+  Окрашенная сталь с износом — `weatherAuto(root)` по узлам (`WX_BODY`, `WX_FRAME`, `WX_GEAR`; материалы с onBeforeCompile не трогает),
+  точечно — `weatherParts(root, parts, {rough, metal, bump})`, текстуры `WX`. `W.weather=false` — выключить.
 - «Размеры»: `W.dims = [{a,b,off,text,name}]` (сейчас только полувагон), `buildDims/updateDims`, переключатель в `#tg`.
 
 ## Вкладка «В пути» (MOTION_WRAP, сцены в MOT_SCENES)

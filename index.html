@@ -466,6 +466,24 @@ const WX=(()=>{
   });
   return {grime,rm,bump};
 })();
+/* weathered steel by assembly: painted body panels with grime, frames rougher, running gear without the grime map */
+const WX_BODY=['body','boards','roof','tank','top','doors','cars','span','power','loco'],WX_FRAME=['frame','tipping','hatches','unload','drain','rack','cyl','crig','brig','air','supports'],
+  WX_GEAR=['bogie','ws','axlebox','susp','bolster'];
+function weatherAuto(root){
+  if(W.weather===false)return;
+  root.traverse(m=>{
+    const pid=m.isMesh&&m.userData.part,P=pid&&W.P[pid];if(!P)return;
+    const kind=WX_BODY.includes(P.sys)?0:WX_FRAME.includes(P.sys)?1:WX_GEAR.includes(P.sys)?2:-1;if(kind<0)return;
+    for(const mt of [].concat(m.material)){
+      if(!mt.isMeshStandardMaterial||mt.userData.wx||mt.transparent||mt.onBeforeCompile.toString().length>40)continue;
+      const c=mt.color,light=(.2126*c.r+.7152*c.g+.0722*c.b)>.35;
+      if(kind<2)mt.map=WX.grime;
+      mt.roughnessMap=WX.rm;mt.metalnessMap=WX.rm;mt.bumpMap=WX.bump;
+      mt.roughness=kind===0?.6:.68;mt.metalness=light?.25:kind===0?.5:.6;mt.bumpScale=kind===0?.0025:.003;
+      mt.userData.wx=1;mt.needsUpdate=true;
+    }
+  });
+}
 /* give the meshes of the listed parts the weathered painted-steel material (o.grime: colour texture on/off) */
 function weatherParts(root,parts,o={}){
   root.traverse(m=>{
@@ -474,7 +492,7 @@ function weatherParts(root,parts,o={}){
       if(!mt.isMeshStandardMaterial)continue;
       if(o.grime!==false)mt.map=WX.grime;
       mt.roughnessMap=WX.rm;mt.metalnessMap=WX.rm;mt.roughness=o.rough||.62;mt.metalness=o.metal||.55;
-      mt.bumpMap=WX.bump;mt.bumpScale=o.bump||.0025;mt.envMapIntensity=o.env||1;mt.needsUpdate=true;
+      mt.bumpMap=WX.bump;mt.bumpScale=o.bump||.0025;mt.envMapIntensity=o.env||1;mt.userData.wx=1;mt.needsUpdate=true;
     }
   });
 }
@@ -568,7 +586,7 @@ function glbPart(parent,url,opts={}){
     parts.forEach(partAnchorOf);
     if(opts.onload)opts.onload(inst);
     if(cut.mode)applyCut();
-    if(W.studio)studioize(inst);
+    if(W.studio!==false){studioize(inst);weatherAuto(inst);}
     const before=legend.children.length;
     applyVisual();renderLabels();
     renderLegend();if(sysIds().length!==before&&!state.part&&!state.quiz)renderInfo();
@@ -741,7 +759,7 @@ const GONDOLA={
   get variant(){return GV;},
   setVariant(v){GV=v;try{localStorage.setItem('gondolaVariant',v);}catch(e){}},
   hashId(){return GV==='solid'?'gondola-solid':'gondola';},
-  section:true,studio:true,   /* section plane in the right panel; studio reflections and light balance */
+  /* section plane, studio look and weathering are on by default for every tab (W.section / W.studio / W.weather = false to switch off) */
   /* main dimensions, mm (model points: coupler axis ±6.96 at 1.06 m, bolsters ±4.325, axles ±0.925 from them, wheel R 0.4785) */
   dims:[
     {a:[-6.96,1.06,0],b:[6.96,1.06,0],off:[0,3.3,0],text:'13 920',name:'Длина по осям сцепления автосцепок'},
@@ -5340,8 +5358,9 @@ function loadWagon(id,keepCam){
     const c=new V3();m.geometry.boundingBox.getCenter(c);REG.partAnchor[pid]=anchor(m,c.x,c.y,c.z);
   }
   state.w=W.init();state.quiz=null;state.part=null;state.hover=null;state.sys=null;explodeCur=0;
-  cutBox.hidden=!W.section;setCut(0);buildDims();
-  studioLights(!!W.studio);if(W.studio)studioize(curRoot);
+  const sec=W.section!==undefined?W.section:!W.ownTrack,stu=W.studio!==false;
+  cutBox.hidden=!sec;setCut(0);buildDims();
+  studioLights(stu);if(stu){studioize(curRoot);weatherAuto(curRoot);}
   clearP();renderStatic();goStep(0);if(!keepCam)setView(W.STEPS[0].cam,0);
   try{history.replaceState(null,'','#'+(W.hashId?W.hashId():W.id));}catch(e){}gcHit();
 }
