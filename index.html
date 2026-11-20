@@ -409,7 +409,7 @@ const camera=new THREE.PerspectiveCamera(36,1,.1,200);
    so it works the same on every GPU): a soft grey dome lighter overhead, a large warm softbox above the front
    right (where the key light is), a warm strip in front and a cool strip behind. Sharp on glossy, blurred on rough. */
 THREE.ShaderChunk.lights_fragment_maps+=`
-#if defined( STANDARD ) && defined( RE_IndirectSpecular )
+#if defined( STANDARD ) && defined( RE_IndirectSpecular ) && defined( STUDIO )
 {
   vec3 sr=inverseTransformDirection( reflect( -geometry.viewDir, geometry.normal ), viewMatrix );
   float ro=clamp( material.specularRoughness, 0.04, 1.0 ), bl=0.02+0.55*ro*ro;
@@ -423,11 +423,14 @@ THREE.ShaderChunk.lights_fragment_maps+=`
 }
 #endif
 `;
-scene.add(new THREE.HemisphereLight(lin(0xcfe0ee),lin(0x1a1f24),.42));
-const key=new THREE.DirectionalLight(lin(0xfff3e4),1.55);
+const hemi=new THREE.HemisphereLight(lin(0xcfe0ee),lin(0x1a1f24),.75);scene.add(hemi);
+/* tabs with W.studio get the studio reflections (STUDIO define) and the studio light balance */
+function studioize(root){root.traverse(m=>{if(!m.isMesh)return;for(const mt of [].concat(m.material))if(mt.isMeshStandardMaterial&&!(mt.defines&&'STUDIO' in mt.defines)){mt.defines=Object.assign(mt.defines||{},{STUDIO:''});mt.needsUpdate=true;}});}
+function studioLights(on){hemi.intensity=on?.42:.75;key.color.copy(on?lin(0xfff3e4):new THREE.Color(0xffffff));key.intensity=on?1.55:1.35;key.shadow.radius=on?3:1;}
+const key=new THREE.DirectionalLight(0xffffff,1.35);
 key.position.set(9,16,11);key.castShadow=true;key.shadow.mapSize.set(2048,2048);
 Object.assign(key.shadow.camera,{left:-15,right:15,top:15,bottom:-15,near:1,far:60});
-key.shadow.bias=-.0004;key.shadow.normalBias=.02;key.shadow.radius=3;scene.add(key);
+key.shadow.bias=-.0004;key.shadow.normalBias=.02;scene.add(key);
 const fill=new THREE.DirectionalLight(lin(0x8fb4ff),.45);fill.position.set(-12,6,-9);scene.add(fill);
 const rim=new THREE.DirectionalLight(lin(0xffd59a),.35);rim.position.set(-4,4,14);scene.add(rim);
 
@@ -565,6 +568,7 @@ function glbPart(parent,url,opts={}){
     parts.forEach(partAnchorOf);
     if(opts.onload)opts.onload(inst);
     if(cut.mode)applyCut();
+    if(W.studio)studioize(inst);
     const before=legend.children.length;
     applyVisual();renderLabels();
     renderLegend();if(sysIds().length!==before&&!state.part&&!state.quiz)renderInfo();
@@ -737,6 +741,7 @@ const GONDOLA={
   get variant(){return GV;},
   setVariant(v){GV=v;try{localStorage.setItem('gondolaVariant',v);}catch(e){}},
   hashId(){return GV==='solid'?'gondola-solid':'gondola';},
+  section:true,studio:true,   /* section plane in the right panel; studio reflections and light balance */
   /* main dimensions, mm (model points: coupler axis ±6.96 at 1.06 m, bolsters ±4.325, axles ±0.925 from them, wheel R 0.4785) */
   dims:[
     {a:[-6.96,1.06,0],b:[6.96,1.06,0],off:[0,3.3,0],text:'13 920',name:'Длина по осям сцепления автосцепок'},
@@ -5335,7 +5340,8 @@ function loadWagon(id,keepCam){
     const c=new V3();m.geometry.boundingBox.getCenter(c);REG.partAnchor[pid]=anchor(m,c.x,c.y,c.z);
   }
   state.w=W.init();state.quiz=null;state.part=null;state.hover=null;state.sys=null;explodeCur=0;
-  cutBox.hidden=!!W.ownTrack;setCut(0);buildDims();
+  cutBox.hidden=!W.section;setCut(0);buildDims();
+  studioLights(!!W.studio);if(W.studio)studioize(curRoot);
   clearP();renderStatic();goStep(0);if(!keepCam)setView(W.STEPS[0].cam,0);
   try{history.replaceState(null,'','#'+(W.hashId?W.hashId():W.id));}catch(e){}gcHit();
 }
